@@ -15,7 +15,7 @@
 - The '`hooks`' section for an `EC2/On-Premises` deployment contains mappings that link deployment lifecycle event hooks to one or more scripts.
 - The '`hooks`' section for a `Lambda` or an `Amazon ECS` deployment specifies Lambda validation functions to run during a deployment lifecycle event. 
 - `Hook` section is `required only` if you are running scripts or Lambda validation functions as part of the deployment.
-- ECS Hook Order(Life Cycle Event)
+- ECS Hook Order(Life Cycle Event)<br>
   ![ECS](https://routescroll.github.io/lifecycle-event-order-ecs.png)
 - Lambda Hook Order(Life Cycle Event)
   ![Lambda](https://routescroll.github.io/lifecycle-event-order-lambda.png)
