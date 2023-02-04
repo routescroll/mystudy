@@ -32,11 +32,11 @@
   - 在Build Phase后执行,用于发布Build后的jar/war或Docker Image等
   - **<font color=red >finall block</font>** 中的命令无论 **<font color=red >command block</font>** 的执行结果是否成功都会执行
 - buildspec sample
-  > version: 0.2
-    run-as: Linux-user-name
-    env:
-    &ensp;&ensp;&ensp;&ensp;shell: shell-tag
-    &ensp;&ensp;&ensp;&ensp;variables:
+  > version: 0.2<br>
+    run-as: Linux-user-name<br>
+    env:<br>
+    &ensp;&ensp;&ensp;&ensp;shell: shell-tag<br>
+    &ensp;&ensp;&ensp;&ensp;variables:<br>
     &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;key: "value"
     &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;key: "value"
     &ensp;&ensp;&ensp;&ensp;parameter-store:
