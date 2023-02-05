@@ -4,15 +4,14 @@
 - Aurora AutoScaling策略：基于Average connections(平均连接数)
   > Average connections of Aurora Replicas which will create a policy based on the average number of connections to Aurora Replicas.
 
-
 ## CodeDeploy
-- Deployment Typte
+- Deployment type<br>
 
-|TST Linear|TST Canary|TST All-at-once|Service|DPT In-place|DPT Blue/green|
-|-|-|-|-|-|-|-|
-|-|-|-|EC2/On-Premises|◎|◎|
-|◎|◎|◎|Lambda|-|◎|
-|◎|◎|◎|ECS|-|◎|
+  |TST Linear|TST Canary|TST All at once|Service|DPT Inplace|DPT Blue/green|
+  |-|-|-|-|-|-|
+  |-|-|-|EC2/On-Premises|◎|◎|
+  |◎|◎|◎|Lambda|-|◎|
+  |◎|◎|◎|ECS|-|◎|
 
 - The '`hooks`' section for an `EC2/On-Premises` deployment contains mappings that link deployment lifecycle event hooks to one or more scripts.
 - The '`hooks`' section for a `Lambda` or an `Amazon ECS` deployment specifies Lambda validation functions to run during a deployment lifecycle event. 
@@ -150,16 +149,16 @@
 - 同一个Task Definition中可定义多个Contaier
 - Task Placement
 
-|Type|Field|
-|-|-|
-|binpack|CPU|
-|~|Memory|
-|Spread|InstanceId|
-|~|attributes:ecs.availability-zone|
-|~|attributes:ecs.instance-type|
-|~|attributes:ecs.os-type|
-|~|attributes:ecs.aim-id|
-|random|~|
+  |Type|Field|
+  |-|-|
+  |binpack|CPU|
+  |~|Memory|
+  |Spread|InstanceId|
+  |~|attributes:ecs.availability-zone|
+  |~|attributes:ecs.instance-type|
+  |~|attributes:ecs.os-type|
+  |~|attributes:ecs.aim-id|
+  |random|~|
 
 - `Environment` 定义
   - 需要在Task Definition中定义`Enviroment`才能传递给container
@@ -579,16 +578,16 @@
 
 - State的Type
 
-|Type|Description|Usecase|
-|-|-|-|
-|Pass|passes its input to its output, without performing work.<br>Pass states are useful|when constructing and debugging state machines.|
-|Task|All work in your state machine is done by tasks|A task performs work by using <br>`an activity`<br>`or an AWS Lambda function`<br>`or by passing parameters to the API actions of other services`|
-|Choice|adds conditional logic to a state machine.||
-|Wait|delays the state machine from continuing for a specified time|a relative time, specified in seconds from when the state begins<br>or an absolute end time, specified as a timestamp.|
-|Succeed|tops an execution successfully|Succeed state is a useful target for Choice state branches that don't do anything but stop the execution|
-|Fail|stops the execution of the state machine and marks it as a failure, unless it is caught by a Catch block.||
-|Parallel|can be used to add separate branches of execution in your state machine.||
-|Map|run a set of workflow steps for each item in a dataset|The Map state's iterations run in parallel, which makes it possible to process a dataset quickly<br>executes the same steps for multiple entries of an array in the state input.|
+  |Type|Description|Usecase|
+  |-|-|-|
+  |Pass|passes its input to its output, without performing work.<br>Pass states are useful|when constructing and debugging state machines.|
+  |Task|All work in your state machine is done by tasks|A task performs work by using <br>`an activity`<br>`or an AWS Lambda function`<br>`or by passing parameters to the API actions of other services`|
+  |Choice|adds conditional logic to a state machine.||
+  |Wait|delays the state machine from continuing for a specified time|a relative time, specified in seconds from when the state begins<br>or an absolute end time, specified as a timestamp.|
+  |Succeed|tops an execution successfully|Succeed state is a useful target for Choice state branches that don't do anything but stop the execution|
+  |Fail|stops the execution of the state machine and marks it as a failure, unless it is caught by a Catch block.||
+  |Parallel|can be used to add separate branches of execution in your state machine.||
+  |Map|run a set of workflow steps for each item in a dataset|The Map state's iterations run in parallel, which makes it possible to process a dataset quickly<br>executes the same steps for multiple entries of an array in the state input.|
 
 ##  AWS Systems Manager Parameter Store
 - `Systems Manager Parameter Store` 与 `Key Management Store` 结合使用保存敏感文本数据(比如证书).
