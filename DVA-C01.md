@@ -1,5 +1,11 @@
 # Explanation
 
+## Common
+- `Exponential backoff` (幂减)
+  `Exponential backoff` can improve an application's reliability by using progressively longer waits between retries. (以幂减速度延长Retry时间)
+  When using the `AWS SDK`, this `logic is built‑in`. (AWS SDK自带幂减处理逻辑)
+  However, in this case the application is incompatible with the AWS SDK so it is necessary to manually implement exponential backoff. (不能用SDK的幂减逻辑只能在自己代码里实现该逻辑)
+
 ## Aurora
 - Aurora AutoScaling策略：基于Average connections(平均连接数)
   > Average connections of Aurora Replicas which will create a policy based on the average number of connections to Aurora Replicas.
@@ -13,19 +19,54 @@
   |◎|◎|◎|Lambda|-|◎|
   |◎|◎|◎|ECS|-|◎|
 
-- The '`hooks`' section for an `EC2/On-Premises` deployment contains mappings that link deployment lifecycle event hooks to one or more scripts.
-- The '`hooks`' section for a `Lambda` or an `Amazon ECS` deployment specifies Lambda validation functions to run during a deployment lifecycle event. 
-- `Hook` section is `required only` if you are running scripts or Lambda validation functions as part of the deployment.
-- ECS Hook Order(Life Cycle Event)<br>
-  ![ECS](https://routescroll.github.io/lifecycle-event-order-ecs.png)
-- Lambda Hook Order(Life Cycle Event)<br>
-  ![Lambda](https://routescroll.github.io/lifecycle-event-order-lambda.png)
-- EC2/On-Premises Hook Order In-Place(Life Cycle Event)<br>
-  ![ec2-in-place](https://routescroll.github.io/lifecycle-event-order-in-place.png)
-- EC2/On-Premises Hook Order Blue/Green(Life Cycle Event)<br>
-  ![ec2-blue-green](https://routescroll.github.io/lifecycle-event-order-blue-green.png)
+- `AppSpec File`
+  - `files section (EC2/On-Premises only)`
+    > files:<br>
+    &ensp;&ensp;- source: source-file-location-1<br>
+    &ensp;&ensp;&ensp;&ensp;destination:destination-file-location-1<br>
+    &ensp;&ensp;- source: source-file-location-2<br>
+    &ensp;&ensp;&ensp;&ensp;destination:destination-file-location-2
+file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
+  - `permission section (EC2/On-Premises only)`
+    > permissions:<br>
+    &ensp;&ensp;- object: object-specification<br>
+    &ensp;&ensp;&ensp;&ensp;pattern: pattern-specification<br>
+    &ensp;&ensp;&ensp;&ensp;except: exception-specification<br>
+    &ensp;&ensp;&ensp;&ensp;owner: owner-account-name<br>
+    &ensp;&ensp;&ensp;&ensp;group: group-name<br>
+    &ensp;&ensp;&ensp;&ensp;mode: mode-specification<br>
+    &ensp;&ensp;acls:<br>
+    &ensp;&ensp;&ensp;&ensp;- acls-specification<br>
+    &ensp;&ensp;context:<br>
+    &ensp;&ensp;&ensp;&ensp;user: user-specification<br>
+    &ensp;&ensp;&ensp;&ensp;type: type-specification<br>
+    &ensp;&ensp;&ensp;&ensp;range: range-specification<br>
+    &ensp;&ensp;type:<br>
+    &ensp;&ensp;&ensp;&ensp;- object-type<br>
+  - `resources section (ECS & Lambda only)`
+    > resources:<br>
+    &ensp;&ensp;- name-of-function-to-deploy:<br>
+    &ensp;&ensp;&ensp;&ensp;type: "AWS::Lambda::Function"<br>
+    &ensp;&ensp;&ensp;&ensp;properties:<br>
+    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;name: name-of-lambda-function-to-deploy<br>
+    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;alias: alias-of-lambda-function-to-deploy<br>
+    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;currentversion: version-of-the-lambda-function-traffic-currently-points-to<br>
+    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;targetversion: version-of-the-lambda-function-to-shift-traffic-to<br>
 
-- 通过创建多个Deployment Groupt来实现多Stage分别Deploy
+  - `hooks Section`
+    - The '`hooks`' section for an `EC2/On-Premises` deployment contains mappings that link deployment lifecycle event hooks to one or more scripts.
+    - The '`hooks`' section for a `Lambda` or an `Amazon ECS` deployment specifies Lambda validation functions to run during a deployment lifecycle event. 
+    - `Hook` section is `required only` if you are running scripts or Lambda validation functions as part of the deployment.
+    - ECS Hook Order(Life Cycle Event)<br>
+      ![ECS](https://routescroll.github.io/lifecycle-event-order-ecs.png)
+    - Lambda Hook Order(Life Cycle Event)<br>
+      ![Lambda](https://routescroll.github.io/lifecycle-event-order-lambda.png)
+    - EC2/On-Premises Hook Order In-Place(Life Cycle Event)<br>
+      ![ec2-in-place](https://routescroll.github.io/lifecycle-event-order-in-place.png)
+    - EC2/On-Premises Hook Order Blue/Green(Life Cycle Event)<br>
+      ![ec2-blue-green](https://routescroll.github.io/lifecycle-event-order-blue-green.png)
+
+- 通过创建多个Deployment Group来实现多Stage分别Deploy
 
 ## CodeBuild
 - buildspec **<font color=red >post_build</font>**
@@ -242,7 +283,7 @@
     -  顺序Scan过慢(Sequential Scan)
   -  > 默认情况下，Scan 操作按顺序处理数据。Amazon DynamoDB 以 1 MB 的增量向应用程序返回数据，应用程序执行其他 Scan 操作检索接下来 1 MB 的数据。扫描的表或索引越大，Scan 完成需要的时间越长。此外，一个顺序 Scan 可能并不总是能够充分利用预置读取吞吐量容量：即使 DynamoDB 跨多个物理分区分配大型表的数据，Scan 操作一次只能读取一个分区。出于这个原因，Scan 受到单个分区的最大吞吐量限制。为了解决这些问题，Scan操作可以逻辑地将表或二级索引分成多个分段，多个应用程序工作进程并行扫描这些段。每个工作进程可以是一个线程（在支持多线程的编程语言中），也可以是一个操作系统进程。要执行并行扫描，每个工作进程都会发出自己的 Scan 请求，并使用以下参数：
     Segment — 要由特定工作进程扫描的段。每个工作进程应使用不同的 Segment 值。
-    TotalSegments — 并行扫描的片段总数。该值必须与应用程序将使用的工作进程数量相同。<br>
+    TotalSegments — 并行扫描的片段总数。该值必须与应用程序将使用的工作进程数量相同。
     ![parallelscan](https://routescroll.github.io/ParallelScan.png)
   - nodejs使用例
     `Scan(TotalSegments=4, Segment=0, ...)`
@@ -251,7 +292,7 @@
     `Scan(TotalSegments=4, Segment=3, ...)`
   - CLI使用例
     `aws dynamodb scan --totalsegments x --segment y ...`
-- `Scan操作对于RCU的冲击`<br>
+- `Scan操作对于RCU的冲击`
   ![scan](https://routescroll.github.io/GetImage.jpeg)
   - 降低Scan操作对RCU冲击的方法
     - Reduce Page Size(Query操作也适用)
@@ -270,20 +311,24 @@
   - TransactWriteItems 和 BatchWriteItem 区别
     - TransactWriteItems:`all-or-nothing operations`
     - BatchWriteItem:可能有的成功有的失败
-- `Conditional Writes`
-  - 预防多个用户同时对同一个项目进行写操作时发生值的冲突.只有在满足某些条件时写操作才能成功
-  - 写操作包括
-    - PutItem -> 比如只有不存在相同PrimaryKey的项目时才能成功
-    - UpdateItem -> 当某项目的Attributes是一个不确定值的时候不能Update
-    - DeleteItem
-  - `Atomic Writes` 实际可以通过 `使用Conditional Writes 的 Transactionns` 来实现
-- `ConsistentRead parameter`
-  - 进行Read操作时指定 `ConsistentRead parameter` = `true` 可以强制使用 `Strongly Consistent`
-  - Defualt Read Operation 是 `Eventally Consistent`
-  - Read Operation包括
-    - `GetItem`
-    - `Query`
-    - `Scan`
+- `Conditional writes`
+  - Default Write Operation
+    - `Unconditional` (PutItem, UpdateItem, DeleteItem)
+    - overwrites an existing item that has the specified primary key
+  - A conditional write succeeds <font color=red>only if</font> the item attributes <font color=red>meet</font> one or more expected <font color=red>conditions</font>. Otherwise, it returns an error
+    - eg. PutItem operation to succeed only if there is not already an item with the same primary key
+    - eg. prevent an UpdateItem operation from modifying an item if one of its attributes has a certain value
+- `RCU计算` 相关问题
+  - MAXIMIZE the number of requests allowed per second
+    - Eventually consistent, 15 RCUs, 1 KB item = <font color=red>30</font> items read/s.
+    - Strongly consistent, 15 RCUs, 1 KB item = 15 items read/s.
+    - Eventually consistent, 5 RCUs, 4 KB item = 10 items read/s.
+    - Strongly consistent, 5 RCUs, 4 KB item = 5 items read/s.
+  - The most efficient use of throughput
+    - Eventually consistent, 15 RCUs, 1 KB item = 30 items/s = <font color=red>2</font> items/RCU -> 一个RCU一次可以读取<font color=red>1KB x 2RCU = 2KB</font>
+    - Strongly consistent, 15 RCUs, 1 KB item = 15 items/s = 1 item per RCU -> 一个RCU一次可以读取<font color=red>1KB x 1RCU = 1KB</font>
+    - Eventually consistent, 5 RCUs, 4 KB item = 10 items/s = <font color=red>2</font> items/RCU -> 一个RCU一次可以读取<font color=red>4KB x 2RCU = 8KB</font> <- <font color=blue>所以这个最高效</font>
+    - Strongly consistent, 5 RCUs, 4 KB item = 5 items/s = 1 item per RCU -> 一个RCU一次可以读取<font color=red>4KB x 1RCU = 4KB</font>
 
 ## Lambda
 - Lambda部署
@@ -315,6 +360,7 @@
     - 频度:10s / 30s / 60s整数倍
 - Metric Filters
   - 用户自行创建 `Metric Filters` 可以在CloudWatch Log中搜索期望的值并数字化后作为Metric中的一维显示或用其设置Alarm
+  - <font color=red>需要注意</font>: CloudWatch只会获取 `Metric Filters` 创建以后发生的Metric数据, 在此之前的Log不是新 `Metric Filter` 的查找对象
 - CloudWatch Event
   - 使用`CloudWatch Event Rule`获取Service的各种变化,并传递给Targe(eg. Lambda)<br>
   ![cloudwatch-event](https://routescroll.github.io/cloudwatch-rule.png)
@@ -356,6 +402,33 @@
     - Not exceed 512 MB
     - Not include a parent folder or top-level directory (subdirectories are fine) 
     - Deploy对象为 `Worker Application` 时Source Bundle里要包含 `cron.yaml` 文件
+  - Deploy图示
+    - All-at-once<br>
+    ![all-at-onece1](https://routescroll.github.io/all_at_once1.png)
+    ![all-at-onece2](https://routescroll.github.io/all_at_once2.png)
+    ![all-at-onece3](https://routescroll.github.io/all_at_once3.png)
+    - Rolling<br>
+    ![all-at-onece1](https://routescroll.github.io/rolling1.png)
+    ![all-at-onece1](https://routescroll.github.io/rolling2-1.png)
+    ![all-at-onece1](https://routescroll.github.io/rolling3.png)
+    ![all-at-onece1](https://routescroll.github.io/rolling4-2.png)
+    ![all-at-onece1](https://routescroll.github.io/rolling5.png)
+    - Rolling additional Batch<br>
+    ![all-at-onece1](https://routescroll.github.io/rolling_add1.png)
+    ![all-at-onece1](https://routescroll.github.io/rolling_add2.png)
+    ![all-at-onece1](https://routescroll.github.io/rolling_add6.png)
+    ![all-at-onece1](https://routescroll.github.io/rolling_add3.png)
+    ![all-at-onece1](https://routescroll.github.io/rolling_add4.png)
+    ![all-at-onece1](https://routescroll.github.io/rolling_add5.png)
+    - Immutable
+    ![all-at-onece1](https://routescroll.github.io/immutable1.png)
+    ![all-at-onece1](https://routescroll.github.io/immutable2-640x294.png)
+    ![all-at-onece1](https://routescroll.github.io/immutaable3-640x294.png)
+    ![all-at-onece1](https://routescroll.github.io/immutable4-640x294.png)
+    ![all-at-onece1](https://routescroll.github.io/immutable5-640x294.png)
+    ![all-at-onece1](https://routescroll.github.io/immutable6.png)
+
+    
 
 ## Elastic Load Balancer
 - `Sticky Sessions`
@@ -382,6 +455,10 @@
 - `Cross-Account Access`<br>
   - 不能把其他账号下的IAM user加入到本账号的IAM Group中<br>
 ![iam-cross-account-access](https://routescroll.github.io/iam-cross-account-access.png)
+- `AWS Managed Policy` & `Customer Managed Policy` 比较
+  - `Customer Managed Policy` 相对而言可以定制粒度更小的Policy
+  - `AWS Managed Policy` 相对而言粒度大, 当只需要某几个权限的场合`AWS Managed Policy`通常会不适用, 要么粒度过大, 要么粒度更小
+
 
 ## AWS Cognito
 - `User Pools` & `Identity Pools`
@@ -407,6 +484,8 @@
     - Optional MFA -> 需要登录者完成MFA登录Challenge
     - Require MFA -> 需要登录者完成MFA登录Challenge, 没有配置MFA则会被Block
     - Block -> 直接Block
+- `认证 & 授权 流程`
+  ![cognito-userpool-id-pool](https://routescroll.github.io/cogtino-userpool-idpool-exchange.png)
 
 ## Step Function
 - `Fields Filter` , 用于从InputJSON中选择特定项目使用
@@ -629,6 +708,35 @@
   - Replication events
 - 访问权限控制
   - S3可以针对个别用户进行访问权限设置, 但是当有大量用户的时候, S3的访问权限控制会变得十分麻烦, 每当新增或删除用户时都要重新设置访问权限控制策略
+- Read/Write 速度限制
+  > 可以通过设置多个Prefix把文件分散开, 充分利用每个Prefix的速率限制, 避免超过R/W的限制引发错误
+  - Prefix数量无限制
+  - Write
+    - 3500/Prefix
+  - Read
+    - 5500/Prefix
+- 关于 `Serside Encryption`
+  - 如果Bucket Policy设置了 `强制上传加密`, 那么客户端 `PutObject` API的Header中一定要加入 `x-amz-server-side-encryption` 选项才能合规
+  - 在这中情形下, 只在Bucket上设定 `Serside Encryption` 并不足以合规(符合Policy)
+  - Polic例
+    > {<br>
+    &ensp;&ensp;"Version": "2012-10-17",<br>
+    &ensp;&ensp;"Id": "PutObjectPolicy",<br>
+    &ensp;&ensp;"Statement": [<br>
+    &ensp;&ensp;&ensp;&ensp;{<br>
+    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Sid": "DenyIncorrectEncryptionHeader",<br>
+    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Effect": "Deny",<br>
+    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Principal": "*",<br>
+    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Action": "s3:PutObject",<br>
+    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Resource": "arn:aws:s3:::awsexamplebucket1/*",<br>
+    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Condition": {<br>
+    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"StringNotEquals": {<br>
+    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;<font color=red>"s3:x-amz-server-side-encryption": "AES256"</font><br>
+    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;}<br>
+    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;}<br>
+    &ensp;&ensp;&ensp;&ensp;}<br>
+    &ensp;&ensp;]<br>
+  }<br>
 
 ## Elastic Cache
 - `Redis`
@@ -649,6 +757,10 @@
   - 解决方式: 修改CloudFormation Template, retain无法删除的resource, 等Deployment结束后手动删除该资源
   - CLI删除Stack时碰见这种情况可以这么做:<br>
     `aws cloudformation delete-stack --stack-name my-stack --retain-resources xxxx`
+- template.yml CLI Deploy
+  > sam package / sam deploy 同样适用
+  1. run `aws cloudformation package --template-file /path_to_template/template.json --s3-bucket bucket-name --output-template-file packaged-template.json`
+  2. run `aws cloudformation deploy xxxxx`
 
 ## Resource Group
 - 可以把想要监控的Resource聚合成一个组, 显示到Management Console首页, 方便管理, 不需要在各个Service之间跳来跳去
@@ -680,3 +792,13 @@
       - When a custom error page is returned.<br>
       - When the response is generated from a function that was triggered by a `viewer request` event.<br>
       - When CloudFront automatically redirects an HTTP request to HTTPS (when the value of Viewer protocol policy is Redirect HTTP to HTTPS).<br>
+- `HTTPS & SSL/TLS`
+  - Origin <===`Origin Protocol Policy`===> CloudFront <===`Viewer Protocol Policy`===> Viewer
+  - `Origin Access Identity (OAI)` 是用来保护S3上的Objects的
+
+# 个别题型
+###### A developer is creating an Auto Scaling group of Amazon EC2 instances. The developer needs to publish a custom metric to Amazon CloudWatch. Which method would be the MOST secure way to authenticate a CloudWatch PUT request? 
+
+- Create an IAM role with the PutMetricData permission and create a new Auto Scaling launch configuration to launch instances using that role （正确）
+- Create an IAM role with the PutMetricData permission and modify the Amazon EC2 instances to use that role （错误）
+- > INCORRECT: "Create an IAM role with the PutMetricData permission and modify the Amazon EC2 instances to use that role" is incorrect as you <font color=red>should create a new launch configuration</font> for the Auto Scaling group <font color=red>rather than updating the instances manually</font>. 
