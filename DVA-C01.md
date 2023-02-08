@@ -255,6 +255,15 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
     - log `who` has accessed your API and `how` the caller accessed the API
 - REST API Method & Path
   ![rest-api-method-path](https://routescroll.github.io/rest-api-method-path.png)
+- `Authorizer Lambda`
+  > 注意 `Token Based` 里的Token也是放在Header里的, 实际考试的时候估计考点是Token Base的话可能会强调使用Token授权吧...
+
+  |Authorizer Type|Identity Parameter|Description|
+  |-|-|-|
+  |Token-Based|JWT or OAuth Token|<font color=red>Token好像是要放在Header里</font>|
+  |Request-Based|Header<br>Query String Parameter<br>Stage Variable<br>$context Variable<br>的任意一种或任意组合|对于WebSocket只能选择这种方式|
+
+  ![lambda-authorizer](http://routescroll.github.io/lambda-authorizer.png)
 
 ## DynamoDB
 - DynamoDB Stream
@@ -440,6 +449,11 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
     > Server <---> ELB <---> Client
 - `x-forwarded-proto request`
   - 在log中查看协议(`HTTP or HTTPS`)
+- `TLS/SSL Termination/Offload`
+  - TLS/SSL 卸载, 也就是解密客户端传来的加密数据
+  - 卸载过程会对性能造成很大影响
+  - 所以可以在Load Balancer端配置SSL证书和`TLS/SSL Termination/Offload`
+  - 既保证了安全, 也减轻了后端EC2的性能压力
 
 ## X-Ray
 - 用来`Tracing Application`整体流程和性能,帮助找到性能瓶颈等<br>
@@ -486,6 +500,11 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
     - Block -> 直接Block
 - `认证 & 授权 流程`
   ![cognito-userpool-id-pool](https://routescroll.github.io/cogtino-userpool-idpool-exchange.png)
+- `Cogtino提供登录页面`
+  > When you create a user pool in Amazon Cognito and then configure a domain for it, Amazon Cognito automatically provisions a hosted web UI to let you add sign-up and sign-in pages to your app. You can add a custom logo or customize the CSS for the hosted web UI.
+  1. 在Cognito中创建 `user pool`
+  2. 为该 `user pool` 配置一个domain
+  3. Cognito会为你的app自动提供一个Web UI供用户注册登录. 用户可以向该页面添加自己的CSS或者logo
 
 ## Step Function
 - `Fields Filter` , 用于从InputJSON中选择特定项目使用
@@ -771,6 +790,10 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
   - 通过Console创建EC2所用的Role时, Console实际上会创建一个和Role同名的 `Instance Profile`.
   - 在Console中选择和EC2 Instance关联的Role时实际上选择的是 `Instance Profile`
   - Console不会创建一个没有与EC2关联的Instance Profile
+- 用CLI给EC2实例赋予Instance Profile
+  1. `aws iam create-instance-profile --instance-profile-name EXAMPLEPROFILENAME`
+  2. `aws iam add-role-to-instance-profile --instance-profile-name EXAMPLEPROFILENAME --role-name EXAMPLEROLENAME `
+  3. `aws ec2 associate-iam-instance-profile --iam-instance-profile Arn=EXAMPLEARNNAME,Name=EXAMPLEPROFILENAME --instance-id i-012345678910abcde`
 
 ## CloudFront
 - `Lambda@Edge`<br>
@@ -795,10 +818,235 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
 - `HTTPS & SSL/TLS`
   - Origin <===`Origin Protocol Policy`===> CloudFront <===`Viewer Protocol Policy`===> Viewer
   - `Origin Access Identity (OAI)` 是用来保护S3上的Objects的
+  
+## Kinesis
+- `Kinesis Client Library` 运行在Consumer EC2集群里, 负责处理数据
+  ![kinesis-flow.png](https://routescroll.github.io/kinesis-flow.png)
 
 # 个别题型
-###### A developer is creating an Auto Scaling group of Amazon EC2 instances. The developer needs to publish a custom metric to Amazon CloudWatch. Which method would be the MOST secure way to authenticate a CloudWatch PUT request? 
+### A developer is creating an Auto Scaling group of Amazon EC2 instances. The developer needs to publish a custom metric to Amazon CloudWatch. Which method would be the MOST secure way to authenticate a CloudWatch PUT request? 
 
 - Create an IAM role with the PutMetricData permission and create a new Auto Scaling launch configuration to launch instances using that role （正确）
 - Create an IAM role with the PutMetricData permission and modify the Amazon EC2 instances to use that role （错误）
-- > INCORRECT: "Create an IAM role with the PutMetricData permission and modify the Amazon EC2 instances to use that role" is incorrect as you <font color=red>should create a new launch configuration</font> for the Auto Scaling group <font color=red>rather than updating the instances manually</font>. 
+- > INCORRECT: "Create an IAM role with the PutMetricData permission and modify the Amazon EC2 instances to use that role" is incorrect as you <font color=red>should create a new launch configuration</font> for the Auto Scaling group <font color=red>rather than updating the instances manually</font>.
+
+### 问题 23：要回看教程 DynamoDB
+
+跳过 
+
+A gaming company is building an application to track the scores for their games using an Amazon DynamoDB table. Each item in the table is identified by a partition key 
+(user_id) and a sort key (game_name). The table also includes the attribute “TopScore”. The table design is shown below: 
+
+Primary key* 
+Partition key 
+user id 
+OAdd sort key 
+game_name 
+String 
+String 
+A Developer has been asked to write a leaderboard application to display the highest achieved scores for each game (game_name), based on the score identified in the “TopScore” attribute. 
+
+What process will allow the Developer to extract results MOST efficiently from the DynamoDB table? 
+
+Use a DynamoDB scan operation to retrieve the scores for “game_name” using the “TopScore” attribute, and order the results based on the score attribute 
+
+Create a global secondary index with a partition key of “game_name” and a sort key of “TopScore” and get the results based on the score attribute 
+
+（正确） 
+
+Create a local secondary index with a partition key of “game_name” and a sort key of “TopScore” and get the results based on the score attribute 
+
+Create a global secondary index with a partition key of “user_id” and a sort key of “game_name” and get the results based on the “TopScore” attribute 
+
+注解 
+
+In an Amazon DynamoDB table, the primary key that uniquely identifies each item in the table can be composed not only of a partition key, but also of a sort key. 
+
+Well-designed sort keys have two key benefits: 
+
+- They gather related information together in one place where it can be queried efficiently. Careful design of the sort key lets you retrieve commonly needed groups of related items using range queries with operators such as begins_with, between, >, <, and so on. 
+
+- Composite sort keys let you define hierarchical (one-to-many) relationships in your data that you can query at any level of the hierarchy. 
+
+To speed up queries on non-key attributes, you can create a global secondary index. A global secondary index contains a selection of attributes from the base table, but they are organized by a primary key that is different from that of the table. The index key does not need to have any of the key attributes from the table. It doesn't even need to have the same key schema as a table. 
+
+For this scenario we need to identify the top achieved score for each game. The most efficient way to do this is to create a global secondary index using “game_name” as the partition key and “TopScore” as the sort key. We can then efficiently query the global secondary index to find the top achieved score for each game. 
+
+Add index 
+Primary key* 
+Index name* 
+Projected attributes 
+Partition key 
+game_name 
+O Add sort key 
+TopScore 
+game_name-TopScore-index 
+All 
+n Create as Local Secondary Index 
+Cancel 
+String 
+String 
+x 
+o 
+O 
+O 
+O 
+Add index 
+CORRECT: "Create a global secondary index with a partition key of “game_name” and a sort key of “TopScore” and get the results based on the score attribute" is the correct answer. 
+
+INCORRECT: "Create a local secondary index with a partition key of “game_name” and a sort key of “TopScore” and get the results based on the score attribute" is incorrect. With a local secondary index you can have a different sort key but the partition key is the same. 
+
+INCORRECT: "Use a DynamoDB scan operation to retrieve the scores for “game_name” using the “TopScore” attribute, and order the results based on the score attribute" is incorrect. This would be inefficient as it scans the whole table. First, we should create a global secondary index, and then use a query to efficiently retrieve the data. 
+
+INCORRECT: "Create a global secondary index with a partition key of “user_id” and a sort key of “game_name” and get the results based on the score attribute" is incorrect as with a global secondary index you have a different partition key and sort key. Also, we don’t need “user_id”, we need “game_name” and “TopScore”. 
+
+References: 
+
+https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/bp-sort-keys.html 
+
+https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html 
+
+Save time with our AWS cheat sheets: 
+
+https://digitalcloud.training/amazon-dynamodb/ 
+
+### 问题 54：要回看教程 DynamoDB
+
+跳过 
+
+A Developer has added a Global Secondary Index (GSI) to an existing Amazon DynamoDB table. The GSI is used mainly for read operations whereas the primary table is extremely write-intensive. Recently, the Developer has noticed throttling occurring under heavy write activity on the primary table. However, the write capacity units on the primary table are not fully utilized. 
+
+What is the best explanation for why the writes are being throttled on the primary table? 
+
+The write capacity units on the GSI are under provisioned 
+
+（正确） 
+
+There are insufficient write capacity units on the primary table 
+
+The Developer should have added an LSI instead of a GSI 
+
+There are insufficient read capacity units on the primary table 
+
+注解 
+
+Some applications might need to perform many kinds of queries, using a variety of different attributes as query criteria. To support these requirements, you can create one or more global secondary indexes and issue Query requests against these indexes in Amazon DynamoDB. 
+
+When items from a primary table are written to the GSI they consume write capacity units. It is essential to ensure the GSI has sufficient WCUs (typically, at least as many as the primary table). If writes are throttled on the GSI, the main table will be throttled (even if there’s enough WCUs on the main table). LSIs do not cause any special throttling considerations. 
+
+In this scenario, it is likely that the Developer assumed that the GSI would need fewer WCUs as it is more read-intensive and neglected to factor in the WCUs required for writing data into the GSI. Therefore, the most likely explanation is that the write capacity units on the GSI are under provisioned 
+
+CORRECT: "The write capacity units on the GSI are under provisioned" is the correct answer. 
+
+INCORRECT: "There are insufficient read capacity units on the primary table" is incorrect as the table is being throttled due to writes, not reads. 
+
+INCORRECT: "The Developer should have added an LSI instead of a GSI" is incorrect as a GSI has specific advantages and there was likely good reason for adding a GSI. Also, you cannot add an LSI to an existing table. 
+
+INCORRECT: "There are insufficient write capacity units on the primary table" is incorrect as the question states that the WCUs are underutilized. 
+
+References: 
+
+https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html 
+
+### 问题 49：要回看教程 X-Rays
+
+跳过 
+
+An application is instrumented to generate traces using AWS X-Ray and generates a large amount of trace data. A Developer would like to use filter expressions to filter the results to specific key-value pairs added to custom subsegments. 
+
+How should the Developer add the key-value pairs to the custom subsegments? 
+
+Add metadata to the custom subsegments 
+
+Setup sampling for the custom subsegments 
+
+Add the key-value pairs to the Trace ID 
+
+Add annotations to the custom subsegments 
+
+（正确） 
+
+注解 
+
+You can record additional information about requests, the environment, or your application with annotations and metadata. You can add annotations and metadata to the segments that the X-Ray SDK creates, or to custom subsegments that you create. 
+
+Annotations are key-value pairs with string, number, or Boolean values. Annotations are indexed for use with filter expressions. Use annotations to record data that you want to use to group traces in the console, or when calling the GetTraceSummaries API. 
+
+Metadata are key-value pairs that can have values of any type, including objects and lists, but are not indexed for use with filter expressions. Use metadata to record additional data that you want stored in the trace but don't need to use with search. 
+
+Annotations can be used with filter expressions, so this is the best solution for this requirement. The Developer can add annotations to the custom subsegments and will then be able to use filter expressions to filter the results in AWS X-Ray. 
+
+CORRECT: "Add annotations to the custom subsegments" is the correct answer. 
+
+INCORRECT: "Add metadata to the custom subsegments" is incorrect as though you can add metadata to custom subsegments it is not indexed and cannot be used with filters. 
+
+INCORRECT: "Add the key-value pairs to the Trace ID" is incorrect as this is not something you can do. 
+
+INCORRECT: "Setup sampling for the custom subsegments " is incorrect as this is a mechanism used by X-Ray to send only statistically significant data samples to the API. 
+
+References: 
+
+https://docs.aws.amazon.com/xray/latest/devguide/xray-sdk-java-segment.html 
+
+Save time with our AWS cheat sheets: 
+
+https://digitalcloud.training/aws-developer-tools/ 
+
+### 问题 53：要回看教程 X-Rays
+
+跳过 
+
+An application has been instrumented to use the AWS X-Ray SDK to collect data about the requests the application serves. The Developer has set the user field on segments to a string that identifies the user who sent the request. 
+
+How can the Developer search for segments associated with specific users? 
+
+Use a filter expression to search for the user field in the segment annotations 
+
+By using the GetTraceGraph API with a filter expression 
+
+Use a filter expression to search for the user field in the segment metadata 
+
+By using the GetTraceSummaries API with a filter expression 
+
+（正确） 
+
+注解 
+
+A segment document conveys information about a segment to X-Ray. A segment document can be up to 64 kB and contain a whole segment with subsegments, a fragment of a segment that indicates that a request is in progress, or a single subsegment that is sent separately. You can send segment documents directly to X-Ray by using the PutTraceSegments API. 
+
+Example minimally complete segment: 
+
+{ 
+
+"name" : "example.com", 
+
+"id" : "70de5b6f19ff9a0a", 
+
+"start_time" : 1.478293361271E9, 
+
+"trace_id" : "1-581cf771-a006649127e371903a2de979", 
+
+"end_time" : 1.478293361449E9 
+
+} 
+
+ 
+ 
+
+A subset of segment fields are indexed by X-Ray for use with filter expressions. For example, if you set the user field on a segment to a unique identifier, you can search for segments associated with specific users in the X-Ray console or by using the GetTraceSummaries API. 
+
+CORRECT: "By using the GetTraceSummaries API with a filter expression" is the correct answer. 
+
+INCORRECT: "By using the GetTraceGraph API with a filter expression" is incorrect as this API action retrieves a service graph for one or more specific trace IDs. 
+
+INCORRECT: "Use a filter expression to search for the user field in the segment metadata" is incorrect as the user field is not part of the segment metadata and metadata is not is not indexed for search. 
+
+INCORRECT: "Use a filter expression to search for the user field in the segment annotations" is incorrect as the user field is not part of the segment annotations. 
+
+References: 
+
+https://docs.aws.amazon.com/xray/latest/devguide/xray-api-segmentdocuments.html 
+
+Save time with our AWS cheat sheets: 
+
+https://digitalcloud.training/aws-developer-tools/ 
