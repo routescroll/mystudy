@@ -21,37 +21,45 @@
 
 - `AppSpec File`
   - `files section (EC2/On-Premises only)`
-    > files:<br>
-    &ensp;&ensp;- source: source-file-location-1<br>
-    &ensp;&ensp;&ensp;&ensp;destination:destination-file-location-1<br>
-    &ensp;&ensp;- source: source-file-location-2<br>
-    &ensp;&ensp;&ensp;&ensp;destination:destination-file-location-2
-file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
+    ```yaml
+    files:
+      - source: source-file-location-1
+        destination: destination-file-location-1
+      - source: source-file-location-2
+        destination: destination-file-location-2
+    file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
+    ```
+
   - `permission section (EC2/On-Premises only)`
-    > permissions:<br>
-    &ensp;&ensp;- object: object-specification<br>
-    &ensp;&ensp;&ensp;&ensp;pattern: pattern-specification<br>
-    &ensp;&ensp;&ensp;&ensp;except: exception-specification<br>
-    &ensp;&ensp;&ensp;&ensp;owner: owner-account-name<br>
-    &ensp;&ensp;&ensp;&ensp;group: group-name<br>
-    &ensp;&ensp;&ensp;&ensp;mode: mode-specification<br>
-    &ensp;&ensp;acls:<br>
-    &ensp;&ensp;&ensp;&ensp;- acls-specification<br>
-    &ensp;&ensp;context:<br>
-    &ensp;&ensp;&ensp;&ensp;user: user-specification<br>
-    &ensp;&ensp;&ensp;&ensp;type: type-specification<br>
-    &ensp;&ensp;&ensp;&ensp;range: range-specification<br>
-    &ensp;&ensp;type:<br>
-    &ensp;&ensp;&ensp;&ensp;- object-type<br>
+    ```yaml
+    permissions:
+      - object: object-specification
+        pattern: pattern-specification
+        except: exception-specification
+        owner: owner-account-name
+        group: group-name
+        mode: mode-specification
+        acls:
+          - acls-specification
+        context:
+          user: user-specification
+          type: type-specification
+          range: range-specification
+        type:
+          - object-type
+    ```
+
   - `resources section (ECS & Lambda only)`
-    > resources:<br>
-    &ensp;&ensp;- name-of-function-to-deploy:<br>
-    &ensp;&ensp;&ensp;&ensp;type: "AWS::Lambda::Function"<br>
-    &ensp;&ensp;&ensp;&ensp;properties:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;name: name-of-lambda-function-to-deploy<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;alias: alias-of-lambda-function-to-deploy<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;currentversion: version-of-the-lambda-function-traffic-currently-points-to<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;targetversion: version-of-the-lambda-function-to-shift-traffic-to<br>
+    ```yaml
+    resources:
+      - name-of-function-to-deploy:
+          type: "AWS::Lambda::Function"
+          properties:
+            name: name-of-lambda-function-to-deploy
+            alias: alias-of-lambda-function-to-deploy
+            currentversion: version-of-the-lambda-function-traffic-currently-points-to
+            targetversion: version-of-the-lambda-function-to-shift-traffic-to
+    ```
 
   - `hooks Section`
     - The '`hooks`' section for an `EC2/On-Premises` deployment contains mappings that link deployment lifecycle event hooks to one or more scripts.
@@ -67,6 +75,19 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
       ![ec2-blue-green](https://routescroll.github.io/lifecycle-event-order-blue-green.png)
 
 - 通过创建多个Deployment Group来实现多Stage分别Deploy
+- `Predefined Lambda Deployment Configuration (Trrafic Shifting)`
+  
+  |Deployment configuration (Trrafic Shifting)|
+  |-|
+  |CodeDeployDefault.LambdaCanary10Percent5Minutes|
+  |CodeDeployDefault.LambdaCanary10Percent10Minutes|
+  |CodeDeployDefault.LambdaCanary10Percent15Minutes|
+  |CodeDeployDefault.LambdaCanary10Percent30Minutes|
+  |CodeDeployDefault.LambdaLinear10PercentEvery1Minute|
+  |CodeDeployDefault.LambdaLinear10PercentEvery2Minutes|
+  |CodeDeployDefault.LambdaLinear10PercentEvery3Minutes|
+  |CodeDeployDefault.LambdaLinear10PercentEvery10Minutes|
+  |CodeDeployDefault.LambdaAllAtOnce|
 
 ## CodeBuild
 - buildspec **<font color=red >post_build</font>**
@@ -74,106 +95,119 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
   - 在Build Phase后执行,用于发布Build后的jar/war或Docker Image等
   - **<font color=red >finall block</font>** 中的命令无论 **<font color=red >command block</font>** 的执行结果是否成功都会执行
 - buildspec sample
-  > version: 0.2<br>
-    run-as: Linux-user-name<br>
-    env:<br>
-    &ensp;&ensp;&ensp;&ensp;shell: shell-tag<br>
-    &ensp;&ensp;&ensp;&ensp;variables:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;key: "value"<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;key: "value"<br>
-    &ensp;&ensp;&ensp;&ensp;parameter-store:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;key: "value"<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;key: "value"<br>
-    &ensp;&ensp;&ensp;&ensp;exported-variables:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- variable<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- variable<br>
-    &ensp;&ensp;&ensp;&ensp;secrets-manager:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;key:secret-id:json-key:version-stage:version-id<br>
-    &ensp;&ensp;&ensp;&ensp;git-credential-helper: no | yes<br><br>
-    proxy:<br>
-    &ensp;&ensp;&ensp;&ensp;upload-artifacts: no | yes<br>
-    &ensp;&ensp;&ensp;&ensp;logs: no | yes<br>
-    batch:<br>
-    &ensp;&ensp;&ensp;&ensp;fast-fail: false | true<br>
-    &ensp;&ensp;&ensp;&ensp;# build-list:<br>
-    &ensp;&ensp;&ensp;&ensp;# build-matrix:<br>
-    &ensp;&ensp;&ensp;&ensp;# build-graph:<br>
-    phases:<br>
-    &ensp;&ensp;&ensp;&ensp;install:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;run-as: Linux-user-name<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;on-failure: ABORT | CONTINUE<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;runtime-versions:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;runtime: version<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;runtime: version<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;commands:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- command<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- command<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;finally:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- command<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- command<br>
-    &ensp;&ensp;&ensp;&ensp;pre_build:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;run-as: Linux-user-name<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;on-failure: ABORT | CONTINUE<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;commands:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- command<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- command<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;finally:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- command<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- command<br>
-    &ensp;&ensp;&ensp;&ensp;build:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;run-as: Linux-user-name<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;on-failure: ABORT | CONTINUE<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;commands:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- command<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- command<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;finally:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- command<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- command<br>
-    &ensp;&ensp;&ensp;&ensp;post_build:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;run-as: Linux-user-name<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;on-failure: ABORT | CONTINUE<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;commands:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- command<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- command<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;finally:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- command<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- command<br>
-    reports:<br>
-    &ensp;&ensp;&ensp;&ensp;report-group-name-or-arn:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;files:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- location<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- location<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;base-directory: location<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;discard-paths: no | yes<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;file-format: report-format<br>
-    artifacts:<br>
-    &ensp;&ensp;&ensp;&ensp;files:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- location<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- location<br>
-    &ensp;&ensp;&ensp;&ensp;name: artifact-name<br>
-    &ensp;&ensp;&ensp;&ensp;discard-paths: no | yes<br>
-    &ensp;&ensp;&ensp;&ensp;base-directory: location<br>
-    &ensp;&ensp;&ensp;&ensp;exclude-paths: excluded paths<br>
-    &ensp;&ensp;&ensp;&ensp;enable-symlinks: no | yes<br>
-    &ensp;&ensp;&ensp;&ensp;s3-prefix: prefix<br>
-    &ensp;&ensp;&ensp;&ensp;secondary-artifacts:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;artifactIdentifier:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;files:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- location<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- location<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;name: secondary-artifact-name<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;discard-paths: no | yes<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;base-directory: location<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;artifactIdentifier:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;files:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- location<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- location<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;discard-paths: no | yes<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;base-directory: location<br>
-    cache:<br>
-    &ensp;&ensp;&ensp;&ensp;paths:<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- path<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;- path<br>
+  ```yaml
+    version: 0.2
+
+    run-as: Linux-user-name
+  
+    env:
+      shell: shell-tag
+      variables:
+        key: "value"
+        key: "value"
+      parameter-store:
+        key: "value"
+        key: "value"
+      exported-variables:
+        - variable
+        - variable
+      secrets-manager:
+        key:secret-id:json-key:version-stage:version-id
+      git-credential-helper: no | yes
+
+    proxy:
+      upload-artifacts: no | yes
+      logs: no | yes
+
+    batch:
+      fast-fail: false | true
+      # build-list:
+      # build-matrix:
+      # build-graph:
+
+    phases:
+      install:
+        run-as: Linux-user-name
+        on-failure: ABORT | CONTINUE
+        runtime-versions:
+          runtime: version
+          runtime: version
+        commands:
+          - command
+          - command
+        finally:
+          - command
+          - command
+
+      pre_build:
+        run-as: Linux-user-name
+        on-failure: ABORT | CONTINUE
+        commands:
+          - command
+          - command
+        finally:
+          - command
+          - command
+
+      build:
+        run-as: Linux-user-name
+        on-failure: ABORT | CONTINUE
+        commands:
+          - command
+          - command
+        finally:
+          - command
+          - command
+
+      post_build:
+        run-as: Linux-user-name
+        on-failure: ABORT | CONTINUE
+        commands:
+          - command
+          - command
+
+      finally:
+        - command
+        - command
+
+    reports:
+      report-group-name-or-arn:
+        files:
+          - location
+          - location
+        base-directory: location
+        discard-paths: no | yes
+        file-format: report-format
+
+    artifacts:
+      files:
+        - location
+        - location
+      name: artifact-name
+      discard-paths: no | yes
+      base-directory: location
+      exclude-paths: excluded paths
+      enable-symlinks: no | yes
+      s3-prefix: prefix
+      secondary-artifacts:
+        artifactIdentifier:
+          files:
+            - location
+            - location
+          name: secondary-artifact-name
+          discard-paths: no | yes
+          base-directory: location
+        artifactIdentifier:
+          files:
+            - location
+            - location
+          discard-paths: no | yes
+          base-directory: location
+
+    cache:
+      paths:
+        - path
+        - path
 - Environment Variable
   - 所有环境变量总长度不能超过`5500`个字符
   - 可用`System Manager Parameter Store`保存多个Environment Variable,每个Environment Variable不超过`4096`字符,然后在`buildsped.yml`中从`System Manager Parameter Store`中取得这些变量
@@ -201,6 +235,20 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
   |~|attributes:ecs.aim-id|
   |random|~|
 
+- Placement Contraint
+  1. **distinctInstance**
+  2. **memberOf** (定义方法: <font color=red>Cluster Query Language</font>)
+  
+    |Format|Sample|
+    |-|-|
+    |subject operator [argument]|attribute:ecs.instance-type == t2.small|
+    ||attribute:ecs.availability-zone in [us-east-1a, us-east-1b]|
+    ||task:group == service:production|
+    ||not(task:group == database)|
+    ||runningTasksCount == 1|
+    ||ec2InstanceId in ['i-abcd1234', 'i-wxyx7890']|
+    ||attribute:ecs.instance-type =~ g2.* and attribute:ecs.availability-zone != us-east-1d|
+
 - `Environment` 定义
   - 需要在Task Definition中定义`Enviroment`才能传递给container
 - ECS端口映射
@@ -222,6 +270,9 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
 - CloudWatch Error Monitor Metric
   - client-side Error Metric -> 4XX Error
   - server-side Error Metric -> 5XX Error
+- API Gateway Response Cache
+  - 可以根据State分别设置Response Cache是否启用
+  - Cache有效期间(TTL)范围: 0~300. 0代表Cache无效
 - 从Client发起请求Cache无效化
   - pass the HTTP header `Cache-Control: max-age=0`
   - 可以使API Gateway不去Check Cache而去后端请求最新数据
@@ -264,11 +315,118 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
   |Request-Based|Header<br>Query String Parameter<br>Stage Variable<br>$context Variable<br>的任意一种或任意组合|对于WebSocket只能选择这种方式|
 
   ![lambda-authorizer](http://routescroll.github.io/lambda-authorizer.png)
+- 几种API的Authorizer类型<br>
+  **REST API**<br>
+  <img src=https://routescroll.github.io/authorizer-rest.png width=70% />
+  **WebSocket API**<br>
+  <img src=https://routescroll.github.io/authorizer-ws.png width=40% />
+  **HTTP API**<br>
+  <img src=https://routescroll.github.io/authorizer-http.png width=70% />
+
+- 关于 `Integration`
+  - **AWS_PROXY & HTTP_PROXY**
+    - 貌似这种带有Proxy的会把Client发来的Request直接发送给后端HTTP Endpoint或Lambda, 会把后端的Response直接发送给Client
+    - 选择Lambda作为Integration时Proxy只能为 **AWS_PROXY** 且不能更改
+  - **AWS & HTTP**
+    - 貌似不带Proxy的需要自己定义某种映射, 把Request/Response重新映射成自己想要的格式, 再发送给后端/Client, 这个过程会发生对Reqeust/Reponse内容的改写?
+  - 如果后端是其他的HTTP Endpoint, 需要选择HTTPXXX系列的Integration类型
+  
+  **发送给后端Lambda的Request的例子**<br>
+  ```json
+  {
+    "resource": "/my/path",
+    "path": "/my/path",
+    "httpMethod": "GET",
+    "headers": {
+      "header1": "value1",
+      "header2": "value2"
+    },
+    "multiValueHeaders": {
+      "header1": [
+        "value1"
+      ],
+      "header2": [
+        "value1",
+        "value2"
+      ]
+    },
+    "queryStringParameters": {
+      "parameter1": "value1",
+      "parameter2": "value"
+    },
+    "multiValueQueryStringParameters": {
+      "parameter1": [
+        "value1",
+        "value2"
+      ],
+      "parameter2": [
+        "value"
+      ]
+    },
+    "requestContext": {
+      "accountId": "123456789012",
+      "apiId": "id",
+      "authorizer": {
+        "claims": null,
+        "scopes": null
+      },
+      "domainName": "id.execute-api.us-east-1.amazonaws.com",
+      "domainPrefix": "id",
+      "extendedRequestId": "request-id",
+      "httpMethod": "GET",
+      "identity": {
+        "accessKey": null,
+        "accountId": null,
+        "caller": null,
+        "cognitoAuthenticationProvider": null,
+        "cognitoAuthenticationType": null,
+        "cognitoIdentityId": null,
+        "cognitoIdentityPoolId": null,
+        "principalOrgId": null,
+        "sourceIp": "IP",
+        "user": null,
+        "userAgent": "user-agent",
+        "userArn": null,
+        "clientCert": {
+          "clientCertPem": "CERT_CONTENT",
+          "subjectDN": "www.example.com",
+          "issuerDN": "Example issuer",
+          "serialNumber": "a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1",
+          "validity": {
+            "notBefore": "May 28 12:30:02 2019 GMT",
+            "notAfter": "Aug  5 09:36:04 2021 GMT"
+          }
+        }
+      },
+      "path": "/my/path",
+      "protocol": "HTTP/1.1",
+      "requestId": "id=",
+      "requestTime": "04/Mar/2020:19:15:17 +0000",
+      "requestTimeEpoch": 1583349317135,
+      "resourceId": null,
+      "resourcePath": "/my/path",
+      "stage": "$default"
+    },
+    "pathParameters": null,
+    "stageVariables": null,
+    "body": "Hello from Lambda!",
+    "isBase64Encoded": false
+  }
+  ```
 
 ## DynamoDB
+- `Partition Key` & `Primary Key`
+  - 官方定义
+    - `Partition key`
+      > The partition key is part of the table's primary key. It is a hash value that is used to retrieve items from your table and allocate data across hosts for scalability and availability.
+    - `Sort key` - optional
+      > You can use a sort key as the second part of a table's primary key. The sort key allows you to sort or search among all items sharing the same partition key.
+  - `Primary Key` 用于唯一标识一个项目. 可以是 `Partition Key`, 也可以是 `Partition Key` + `SortKey`
+  - `Partition Key` 用于决定Item保存在哪个Patition中(DynamoDB内部处理, 所有Items都会根据Partition Key的Hash值分散在各个Partition中保存)
+    <img name=dynamo-partition src=https://routescroll.github.io/dynamo-partition.jpeg width=50%>
 - DynamoDB Stream
-  `按修改时间顺序保存Item修改记录,Max 24小时以内记录`
-- AWS Managed Policy
+  - `按修改时间顺序保存Item修改记录,Max 24小时以内记录`
+  - Stream Invoke Lambda 是 synchronously
   `会对所有DynamoDB Resource生效, 不能指定某个DynamoDB Resource`
   
   | StreamViewType | Record Type |
@@ -293,7 +451,7 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
   -  > 默认情况下，Scan 操作按顺序处理数据。Amazon DynamoDB 以 1 MB 的增量向应用程序返回数据，应用程序执行其他 Scan 操作检索接下来 1 MB 的数据。扫描的表或索引越大，Scan 完成需要的时间越长。此外，一个顺序 Scan 可能并不总是能够充分利用预置读取吞吐量容量：即使 DynamoDB 跨多个物理分区分配大型表的数据，Scan 操作一次只能读取一个分区。出于这个原因，Scan 受到单个分区的最大吞吐量限制。为了解决这些问题，Scan操作可以逻辑地将表或二级索引分成多个分段，多个应用程序工作进程并行扫描这些段。每个工作进程可以是一个线程（在支持多线程的编程语言中），也可以是一个操作系统进程。要执行并行扫描，每个工作进程都会发出自己的 Scan 请求，并使用以下参数：
     Segment — 要由特定工作进程扫描的段。每个工作进程应使用不同的 Segment 值。
     TotalSegments — 并行扫描的片段总数。该值必须与应用程序将使用的工作进程数量相同。
-    ![parallelscan](https://routescroll.github.io/ParallelScan.png)
+    <img name=parallelscan src=https://routescroll.github.io/ParallelScan.png width=50% />
   - nodejs使用例
     `Scan(TotalSegments=4, Segment=0, ...)`
     `Scan(TotalSegments=4, Segment=1, ...)`
@@ -302,7 +460,7 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
   - CLI使用例
     `aws dynamodb scan --totalsegments x --segment y ...`
 - `Scan操作对于RCU的冲击`
-  ![scan](https://routescroll.github.io/GetImage.jpeg)
+  <img name=scan src=https://routescroll.github.io/GetImage.jpeg width=50% />
   - 降低Scan操作对RCU冲击的方法
     - Reduce Page Size(Query操作也适用)
       - Default Page Size:`1MB`
@@ -338,6 +496,98 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
     - Strongly consistent, 15 RCUs, 1 KB item = 15 items/s = 1 item per RCU -> 一个RCU一次可以读取<font color=red>1KB x 1RCU = 1KB</font>
     - Eventually consistent, 5 RCUs, 4 KB item = 10 items/s = <font color=red>2</font> items/RCU -> 一个RCU一次可以读取<font color=red>4KB x 2RCU = 8KB</font> <- <font color=blue>所以这个最高效</font>
     - Strongly consistent, 5 RCUs, 4 KB item = 5 items/s = 1 item per RCU -> 一个RCU一次可以读取<font color=red>4KB x 1RCU = 4KB</font>
+- DynamoDB不支持Resource-Based Policy
+  - Identity-Based Polic允许用户访问某个或某些Talbe
+- 通过 `IAM Policy` 可以限制用户只能访问DynamoDB Talbe的某些Item/某些Attributes
+  - **考虑一款手机游戏应用，让玩家可以选择和玩各种不同的游戏。该应用程序使用一个名为GameScores的DynamoDB表来跟踪高分和其他用户数据。表中的每个项都由用户ID和用户所玩游戏的名称唯一标识。GameScores表有一个主键，由分区键(UserId)和排序键(GameTitle)组成。用户只能访问与其用户ID相关的游戏数据。想要玩游戏的用户必须属于名为GameRole的IAM角色，该角色有一个附加的安全策略。要在这个应用程序中管理用户权限，你可以写一个权限策略，如下所示:**
+  ```yaml
+  {
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowAccessToOnlyItemsMatchingUserID",
+            "Effect": "Allow",
+            "Action": [
+                "dynamodb:GetItem",
+                "dynamodb:BatchGetItem",
+                "dynamodb:Query",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:BatchWriteItem"
+            ],
+            "Resource": [
+                "arn:aws:dynamodb:us-west-2:123456789012:table/GameScores"
+            ],
+            "Condition": {
+                "ForAllValues:StringEquals": {
+                    "dynamodb:LeadingKeys": [
+                        "${www.amazon.com:user_id}"
+                    ],
+                    "dynamodb:Attributes": [
+                        "UserId",
+                        "GameTitle",
+                        "Wins",
+                        "Losses",
+                        "TopScore",
+                        "TopScoreDateTime"
+                    ]
+                },
+                "StringEqualsIfExists": {
+                    "dynamodb:Select": "SPECIFIC_ATTRIBUTES"
+                }
+            }
+        }
+    ]
+  }
+  ```
+  - **除了为GameScores表(Resource元素)上的特定DynamoDB动作(Action元素)授予权限外，Condition元素还使用以下特定于DynamoDB的条件键来限制权限，如下所示:**<br>
+    - **dyanmodb:LeadingKeys** —这个条件键允许用户只访问分区键值与用户ID匹配的项目。这个ID ${www.amazon.com:user_id}是一个替换变量。有关替代变量的更多信息，请参见使用web身份联合。<br>
+    - **dynamodb:Attributes** -这个条件键限制对指定属性的访问，这样只有权限策略中列出的操作才能返回这些属性的值。此外，StringEqualsIfExists子句确保应用程序必须始终提供一个特定属性的列表来进行操作，并且应用程序不能请求所有属性。评估IAM策略时，结果总是true(允许访问)或false(拒绝访问)。如果Condition元素的任何部分为假，则整个策略的计算结果为假，并拒绝访问。
+
+  - **下面的权限策略允许对表和表索引(在Resource元素中指定)执行特定的DynamoDB操作(在Action元素中指定)。该策略使用dynamodb:LeadingKeys条件键将权限限制到分区键值与用户的Facebook ID匹配的项目**
+  ```yaml
+  {
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "LimitAccessToCertainAttributesAndKeyValues",
+            "Effect": "Allow",
+            "Action": [
+                "dynamodb:UpdateItem",
+                "dynamodb:GetItem",
+                "dynamodb:Query",
+                "dynamodb:BatchGetItem"
+            ],
+            "Resource": [
+                "arn:aws:dynamodb:us-west-2:123456789012:table/GameScores",
+                "arn:aws:dynamodb:us-west-2:123456789012:table/GameScores/index/TopScoreDateTimeIndex"
+            ],
+            "Condition": {
+                "ForAllValues:StringEquals": {
+                    "dynamodb:LeadingKeys": [
+                        "${graph.facebook.com:id}"
+                    ],
+                    "dynamodb:Attributes": [
+                        "attribute-A",
+                        "attribute-B"
+                    ]
+                },
+                "StringEqualsIfExists": {
+                    "dynamodb:Select": "SPECIFIC_ATTRIBUTES",
+                    "dynamodb:ReturnValues": [
+                        "NONE",
+                        "UPDATED_OLD",
+                        "UPDATED_NEW"
+                    ]
+                }
+            }
+        }
+    ]
+  }
+  ```
+  > **<font size=5 color=red>Important</font>**
+  > 如果使用dynamodb:Attributes，则必须指定表的所有主键和索引键属性的名称(在**Resource**中指定)，以及策略中列出的任何辅助索引的名称。否则，DynamoDB不能使用这些关键属性来执行请求的操作。
 
 ## Lambda
 - Lambda部署
@@ -362,11 +612,36 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
   - `Amazon DynamoDB`
   - `Amazon Simple Queue Service`
 - 上面以外的Service是主动Invoke Lambda(将Lambda作为Target),并且需要适当的权限才能Invoke
+- `/tmp`
+  - 最大**512MB**
+  - 同一Lambda每次Invocation时 `/tmp` 下的东西不变
+  - 可以用作每次Invocation都要用但长期保持不变的文件的缓存
+- Lambda连接VPC Private Subnet所需必要信息
+  - Private Subnet ID
+  - SG ID
+    > Lambda连接VPC Private Subnet后为了能继续访问Internet, 需要给目标VPC添加NAT
+- `alias`
+  - 类似于Lambda的指针, 指向一个指定的Lambda Version
+  - 也可以使 `alias` 指向两个不同的Version, 并分别指定两个Version的Traffic Weighting
+    <img name=lambda-aliss-weighting src=https://routescroll.github.io/lambda-aliss-weighting.jpeg width=50%>
+- CloudFormation template
+  - 代码文件除了打包上传S3, 还可以在template.yaml中直接写代码(比如用Nodejs或者Python时)
+    <img name=lambda-template-sourcecode src=https://routescroll.github.io/lambda-template-sourcecode.jpeg width=50%>
+  - 使用S3保存代码时的写法
+    <img name=lambda-template-s3 src=https://routescroll.github.io/lambda-template-s3.jpeg width=50%>
+- Environment Variable的 `Transit Encryption`
+  - 为Lambda添加 Environment Variable 时可以选择是否用 `Encrypt Helper` 对Environment Variable的Value进行加密, 并使用KMS作为加密/解密Key
+  - 这样 Environment Variable 的Value在Console中会显示为加密后的字符串, Lambda代码中要使用该Environment Variable时需要通过KMS解密该 Environment Variable 的Value后才能使用<br>
+    <img name=lambda-add-encrypt-env-val src=https://routescroll.github.io/lambda-add-encrypt-env-val.png width=50%><img name=lambda-encrypt-env-kms-samplecode src=https://routescroll.github.io/lambda-encrypt-env-kms-samplecode.png width=50%><img name=lambda-after-encrypt src=https://routescroll.github.io/lambda-after-encrypt.png width=50%>
 
 ## CloudWatch
 - Alarm
   - `High-Resolution Alarm`
     - 频度:10s / 30s / 60s整数倍
+  - `High-Resolutin Metric`
+    - 1/5/10/30/60s/60s的整数倍
+  - `Detailed Monitoring`
+    - 频度只有1min, 没有更细的频度
 - Metric Filters
   - 用户自行创建 `Metric Filters` 可以在CloudWatch Log中搜索期望的值并数字化后作为Metric中的一维显示或用其设置Alarm
   - <font color=red>需要注意</font>: CloudWatch只会获取 `Metric Filters` 创建以后发生的Metric数据, 在此之前的Log不是新 `Metric Filter` 的查找对象
@@ -388,6 +663,9 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
   - 可以在一个账号里创建一个`CloudWatch Dashboard`, 监控其他 `Account & Region` 的Megric
   - 需要再CloudWatch里启用`cross-account cross-region`
   - 需要添加目标账户, 并得到目标账户的承认
+- `namespace`
+  - 不同 `namespace` 中的Metrics是彼此独立的
+  - 故, 给各个application定义自己的 `namespace`, 把各个application各自的Metrics发送到各自的 `namespace` 中, 就不会把很多application的Metrics混在一起显示了
 
 ## AppSync - GraphQL
 - GraphQL与AppSync组合向用户提供 **Single API - Multi Data Source** 服务<br>
@@ -399,6 +677,17 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
   - `Load Balancing`
   - `Auto Scaling`
   - `RDS Integrated (RDS Auto Scaling included)`
+- 关于配制
+  - 对于Configuration File的要求
+
+    |Request Item|RequestDetails|
+    |-|-|
+    |Location|Folder Name:**`.ebextensions`**<br>Folder Location: root of Source Bundle<br>Files Location: **`.ebextensions`**<br>|
+    |Naming|Configuration files must have the **`.config`** file extension|
+    |Formatting|Configuration files must conform to **`YAML or JSON`** specifications|
+    |Uniqueness|Use **`each key only once`** in **`each configuration file`**|
+
+    ![ebs-config-files](https://routescroll.github.io/ebs-config-files.jpeg)
 - 关于`启用X-Rays Daemon`
   - 可以在Beanstalk的Console中启用
   - 可以在Beanstalk的Source code中启用
@@ -411,33 +700,98 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
     - Not exceed 512 MB
     - Not include a parent folder or top-level directory (subdirectories are fine) 
     - Deploy对象为 `Worker Application` 时Source Bundle里要包含 `cron.yaml` 文件
-  - Deploy图示
-    - All-at-once<br>
-    ![all-at-onece1](https://routescroll.github.io/all_at_once1.png)
-    ![all-at-onece2](https://routescroll.github.io/all_at_once2.png)
-    ![all-at-onece3](https://routescroll.github.io/all_at_once3.png)
-    - Rolling<br>
-    ![all-at-onece1](https://routescroll.github.io/rolling1.png)
-    ![all-at-onece1](https://routescroll.github.io/rolling2-1.png)
-    ![all-at-onece1](https://routescroll.github.io/rolling3.png)
-    ![all-at-onece1](https://routescroll.github.io/rolling4-2.png)
-    ![all-at-onece1](https://routescroll.github.io/rolling5.png)
-    - Rolling additional Batch<br>
-    ![all-at-onece1](https://routescroll.github.io/rolling_add1.png)
-    ![all-at-onece1](https://routescroll.github.io/rolling_add2.png)
-    ![all-at-onece1](https://routescroll.github.io/rolling_add6.png)
-    ![all-at-onece1](https://routescroll.github.io/rolling_add3.png)
-    ![all-at-onece1](https://routescroll.github.io/rolling_add4.png)
-    ![all-at-onece1](https://routescroll.github.io/rolling_add5.png)
-    - Immutable
-    ![all-at-onece1](https://routescroll.github.io/immutable1.png)
-    ![all-at-onece1](https://routescroll.github.io/immutable2-640x294.png)
-    ![all-at-onece1](https://routescroll.github.io/immutaable3-640x294.png)
-    ![all-at-onece1](https://routescroll.github.io/immutable4-640x294.png)
-    ![all-at-onece1](https://routescroll.github.io/immutable5-640x294.png)
-    ![all-at-onece1](https://routescroll.github.io/immutable6.png)
+  - Deploy比较
+    **Deploy失败的时候有一部分是需要手动Redeploy的**
+    ![elastic-beanstalk-deploy](https://routescroll.github.io/elastic-beanstalk-deploy.jpeg)
+  - Deploy图示 ([参考](https://dev.classmethod.jp/articles/elastic-beanstalk-deploy-policy/))
+    - **<font color=red>All-at-once</font>**<br>
+    <img src=https://routescroll.github.io/all_at_once1.png width=50%>
+    <img src=https://routescroll.github.io/all_at_once2.png width=50%>
+    <img src=https://routescroll.github.io/all_at_once3.png width=50%>
+    - **<font color=red>Rolling</font>**<br>
+    <img src=https://routescroll.github.io/rolling1.png width=50%>
+    <img src=https://routescroll.github.io/rolling2-1.png width=50%>
+    <img src=https://routescroll.github.io/rolling3.png width=50%>
+    <img src=https://routescroll.github.io/rolling4-2.png width=50%>
+    <img src=https://routescroll.github.io/rolling5.png width=50%>
+    - **<font color=red>Rolling additional Batch</font>**<br>
+    <img src=https://routescroll.github.io/rolling_add1.png width=50%>
+    <img src=https://routescroll.github.io/rolling_add2.png width=50%>
+    <img src=https://routescroll.github.io/rolling_add6.png width=50%>
+    <img src=https://routescroll.github.io/rolling_add3.png width=50%>
+    <img src=https://routescroll.github.io/rolling_add4.png width=50%>
+    <img src=https://routescroll.github.io/rolling_add5.png width=50%>
+    - **<font color=red>Immutable</font>**<br>
+    <img src=https://routescroll.github.io/immutable1.png width=50%>
+    <img src=https://routescroll.github.io/immutable2-640x294.png width=50%>
+    <img src=https://routescroll.github.io/immutaable3-640x294.png width=50%>
+    <img src=https://routescroll.github.io/immutable4-640x294.png width=50%>
+    <img src=https://routescroll.github.io/immutable5-640x294.png width=50%>
+    <img src=https://routescroll.github.io/immutable6.png width=50%>
 
-    
+- 关于定义Container
+  - 必要文件: <font color=red>Dockerrun.aws.json</font>
+  - 文件路径: Source Bundle的root路径下. (在EBS Instance里位于 <font color=red>/var/app/current/</font>)
+  - 必要section:
+    1. AWSEBDockerrunVersion
+      > Specifies the version number as the value 2 for ECS managed Docker environments.
+    2. containerDefinitions
+      > An array of container definitions, detailed below.
+    3. volumes
+      > Creates volumes from folders in the Amazon EC2 container instance, or from your source bundle (deployed to /var/app/current).<br>
+      > <font color=red>Mount these volumes to paths within your Docker containers using **mountPoints**</font>
+  ```json
+  {
+    "AWSEBDockerrunVersion": 2,
+    "volumes": [
+      {
+        "name": "php-app",
+        "host": {
+          "sourcePath": "/var/app/current/php-app"
+        }
+      },
+      {
+        "name": "nginx-proxy-conf",
+        "host": {
+          "sourcePath": "/var/app/current/proxy/conf.d"
+        }
+      }
+    ],
+    "containerDefinitions": [
+      {
+        "name": "nginx-proxy",
+        "image": "nginx",
+        "essential": true,
+        "memory": 128,
+        "portMappings": [
+          {
+            "hostPort": 80,
+            "containerPort": 80
+          }
+        ],
+        "links": [
+          "php-app"
+        ],
+        "mountPoints": [
+          {
+            "sourceVolume": "php-app",
+            "containerPath": "/var/www/html",
+            "readOnly": true
+          },
+          {
+            "sourceVolume": "nginx-proxy-conf",
+            "containerPath": "/etc/nginx/conf.d",
+            "readOnly": true
+          },
+          {
+            "sourceVolume": "awseb-logs-nginx-proxy",
+            "containerPath": "/var/log/nginx"
+          }
+        ]
+      }
+    ]
+  }
+  ```
 
 ## Elastic Load Balancer
 - `Sticky Sessions`
@@ -472,7 +826,12 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
 - `AWS Managed Policy` & `Customer Managed Policy` 比较
   - `Customer Managed Policy` 相对而言可以定制粒度更小的Policy
   - `AWS Managed Policy` 相对而言粒度大, 当只需要某几个权限的场合`AWS Managed Policy`通常会不适用, 要么粒度过大, 要么粒度更小
-
+- 关于 `SCPs`
+  - `SCPs` 用来控制用户权限(Service Control Policies)
+    ![scps](https://routescroll.github.io/scps.png)
+- **Best Practic**
+  - Use groups to assign permissions to users
+  - Create standalone policies instead of using inline policies -> `Inline Policies` 只能应用于单一Entity, 不能被其他Entity复用
 
 ## AWS Cognito
 - `User Pools` & `Identity Pools`
@@ -482,7 +841,7 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
 |`User Pools`|用户群体用于身份验证（身份核实）。如果使用用户群体，应用程序用户将可以通过该用户群体进行登录或通过第三方身份提供者（IdP）进行联合身份验证。|
 |`Identity Pools`|身份池用于授权（访问控制）。您可以使用身份池为用户创建唯一身份并向他们授予访问其他 AWS 服务的权限。|
 
-- `Cognito` 所支持的`Identity Pools`
+- `Cognito` 所支持的`Identity Providers`
   - Public providers: Amazon, Facebook, Google, Apple 
   - Amazon Cognito user pools 
   - Open ID Connect providers (identity pools) 
@@ -500,11 +859,17 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
     - Block -> 直接Block
 - `认证 & 授权 流程`
   ![cognito-userpool-id-pool](https://routescroll.github.io/cogtino-userpool-idpool-exchange.png)
-- `Cogtino提供登录页面`
+- `Cognito User Pool提供登录页面`
   > When you create a user pool in Amazon Cognito and then configure a domain for it, Amazon Cognito automatically provisions a hosted web UI to let you add sign-up and sign-in pages to your app. You can add a custom logo or customize the CSS for the hosted web UI.
   1. 在Cognito中创建 `user pool`
   2. 为该 `user pool` 配置一个domain
   3. Cognito会为你的app自动提供一个Web UI供用户注册登录. 用户可以向该页面添加自己的CSS或者logo
+- `Cognito Sync`
+  - 用户Deviece中使用 `Client Library` 可以Device内部建立 **Local Cache of Identity Data**
+  - `Client Library` 与云端Cognito Service进行数据同步, 从而使用户在多个设备上都能保持同样的Identity Data同步
+
+- 关于 `Unauthenticated identities(users)`
+  - Cognito支持允许用户在不登录的情况下获取有限的访问权限, 设置简单, 只需增加一个有限权限的Role并分配给 `Unauthenticated users`
 
 ## Step Function
 - `Fields Filter` , 用于从InputJSON中选择特定项目使用
@@ -674,6 +1039,12 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
 &ensp;&ensp;&ensp;&ensp;}<br>
 }<br>
 
+- 可能的 `Destination`
+    > SNS<br>
+    > SQS<br>
+    > Lambda<br>
+    > EventBridge<br>
+
 - State的Type
 
   |Type|Description|Usecase|
@@ -691,8 +1062,15 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
 - `Systems Manager Parameter Store` 与 `Key Management Store` 结合使用保存敏感文本数据(比如证书).
 - `Parameter` 使用 `KMS` 加密/解密文本.
 - 其他Application/Service(比如Lambda)可以通过引用`Parameter/KMS`中的内容实现代码中无明文使用敏感数据
-- `Systems Manager Parameter Store` 不会自动轮换加密证书之类的,需要application自己去做轮换.
+- `Systems Manager Parameter Store` 不会自动轮换加密证书之类的,需要application自己去做轮换
 - [参考:Difference between Parameter Store & Secrets Manager](https://medium.com/awesome-cloud/aws-difference-between-secrets-manager-and-parameter-store-systems-manager-f02686604eae)
+  > **Secrets Manager**: It was designed specifically for **confidential information (like database credentials, API keys)** that needs to be encrypted, so the creation of a secret entry has encryption enabled by default. It also gives **additional functionality** like **rotation of keys**.<br>
+  > **Systems Manager** Parameter Store: It was designed to cater to a **wider use case**, not just secrets or passwords, but also application configuration variables like URLs, Custom settings, AMI IDs, License keys, etc.
+
+  |Service|Cost|Rotation|Cross-account Access|Secret Size|Limits|Multiple Regions Replication|Use Cases|
+  |-|-|-|-|-|-|-|-|
+  |Secrets Manager|Paid|- Integration with<br>RDS<br>Redshift<br>DocumentDB<br>- By Lambda|Yes|Max 10KB|500000 secrets/region & account|Yes|store **only encrypted** values and super **easy** way to manage the **rotation** of the secrets|-|-|
+  |Parameter Store|Paid when<br>- Higher Throughput<br>- Advanced Parameters|Only by Lambda|No|- Standard: 4KB<br>- Advanced: 8KB|10000 standard parameters/region & account|No|**cheaper** option to store **encrypted** or **unencrypted** secrets|-|-|
 
 ## AWS KMS
 - `AWS Managed CMKs`
@@ -710,6 +1088,17 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
 
     使用Plaintext Data Key加密数据
     ![generate-data-key](https://routescroll.github.io/encrypt-data.jpeg)
+- 过于频繁的的请求 `KMS GenerateDataKey` 可能会引发KMS API限流
+  - **解决方法1**: 向AWS申请提高API请求限额
+  - **解决方法2**: 使用 `AWS Encryption SDK` 并开启其 `LocalCryptoMaterialsCache`
+    - 应用场景
+      > - It can reuse data keys (**允许重复使用Data Keys加密**)
+      > - It generates numerous data keys (**需要生成大量Data Keys**)
+      > - Your cryptographic operations are unacceptably slow, expensive, limited, or resource-intensive (**加密操作需要快速/低价/有限的?/资源敏感**)
+    - 使用方法
+      > - **Java/Python** <u>LocalCryptoMaterialsCache constructor</u>
+      > - **JavaScript** <u>getLocalCryptographicMaterialsCache function</u>
+      > - **C** <u>aws_cryptosdk_materials_cache_local_new constructor</u>
 
 ## S3
 - `Static WebSite` 启用
@@ -794,6 +1183,17 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
   1. `aws iam create-instance-profile --instance-profile-name EXAMPLEPROFILENAME`
   2. `aws iam add-role-to-instance-profile --instance-profile-name EXAMPLEPROFILENAME --role-name EXAMPLEROLENAME `
   3. `aws ec2 associate-iam-instance-profile --iam-instance-profile Arn=EXAMPLEARNNAME,Name=EXAMPLEPROFILENAME --instance-id i-012345678910abcde`
+- 使用 `launch configuration`
+  - `launch configuration` **可以指定ASG**
+  - 想更改 `launch configuration`, 只能建立新版本, 不能直接改已有的
+- **Default Credential Provider Chain** (不仅仅是EC2, 应该说时AWS SDK/CLI 的共通设置) 
+  (**When you initialize a new service client without supplying any arguments**)
+  Java AWS SDK/CLI 的 `Credential Provider Chain` 查找顺序
+    1. **Environment variables** – AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY (Java SDK API: `EnvironmentVariableCredentialsProvider`)
+    2. **Java system properties** – aws.accessKeyId and aws.secretKey (Java SDK API: `SystemPropertiesCredentialsProvider`)
+    3. **The default credential profiles file** -  typically located at ~/.aws/credentials (location can vary per platform) (`ProfileCredentialsProvider`)
+    4. **Amazon ECS container credentials** – loaded from the Amazon ECS if the environment variable AWS_CONTAINER_CREDENTIALS_RELATIVE_URI is set (`ContainerCredentialsProvider`)
+    5. **Instance profile credentials** – used on EC2 instances and delivered through the Amazon EC2 metadata service. (`InstanceProfileCredentialsProvider`)
 
 ## CloudFront
 - `Lambda@Edge`<br>
@@ -818,10 +1218,40 @@ file_exists_behavior: DISALLOW|OVERWRITE|RETAIN
 - `HTTPS & SSL/TLS`
   - Origin <===`Origin Protocol Policy`===> CloudFront <===`Viewer Protocol Policy`===> Viewer
   - `Origin Access Identity (OAI)` 是用来保护S3上的Objects的
+- `File Invalidation`
+  - 当用户发现不能刷新到新的文件时(比如图片), 需要Service端(`CloudFront`)进行旧版本文件的无效化
+  - 该操作需要在 `CloudFront` 端进行, 指定那些文件需要无效化
+
+## VPC
+- `VPC Flow Logs`
+  - 应用场景
+    > Diagnosing overly restrictive security group rules (**诊断过于严格的SG规则**)<br>
+    > Monitoring the traffic that is reaching your instance (**监控到达Instance的流量**)<br>
+    > Determining the direction of the traffic to and from the network interfaces (**确定进出网络接口的流量方向**)<br>
+  - 三种监控级别: <u>Instance</u>, <u>Subnet</u>, <u>VPC</u>
+    ![vpc-flow-level](https://routescroll.github.io/vpc-flow-level.png)
   
 ## Kinesis
 - `Kinesis Client Library` 运行在Consumer EC2集群里, 负责处理数据
   ![kinesis-flow.png](https://routescroll.github.io/kinesis-flow.png)
+- 支持 Server-side 加密, 从Stream写入Storage Layer之前会被加密, 从Stroage Layer取出的时候会被解密
+  - 支持使用KMS加密
+
+## STS (Security Token Service)
+- Typically, you use **`GetSessionToken`** if you want to **`use MFA`** to **`protect programmatic calls to`** specific **`AWS API`** operations
+- 使用 **STS的`decode-authorization-message`** API 来解码授权相关的加密Message
+
+## CloudTrail
+- 貌似通过Console创建的CloudTrail无需每个Region都设置一次CloudTrail. 默认都是应用于 `All Region`, 记录下来的log会同一存储在同一个S3 Bucket里
+
+## ElasticCache
+- **Memcached 和 Redis 的对比**<br>
+  <img name=elastic-cache-compare src=https://routescroll.github.io/elastic-cache-compare.png width=50%>
+
+## SQS
+- 关于Message `VisibilityTimeout` 可见期间
+  - 如果Messenger的Consumer在 `VisibilityTimout` 期间没有完成处理, 那么Message会再次出现在Queue中, 有可能会被其他Consumer接收到, 造成同一Message重复处理<br>
+  <img name=sqs-visibility-timeout src=https://routescroll.github.io/sqs-visibility-timeout.png width=50%>
 
 # 个别题型
 ### A developer is creating an Auto Scaling group of Amazon EC2 instances. The developer needs to publish a custom metric to Amazon CloudWatch. Which method would be the MOST secure way to authenticate a CloudWatch PUT request? 
