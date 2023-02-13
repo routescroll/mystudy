@@ -443,7 +443,7 @@
 - `Query`
   - 只能用PartitionKey进行查询,用Filter获得指定值.耗费RCU相对少 
 - `Parallel Scan with Limit Parameter` (提高Scan效率)
-  - 使用 `Limit Parameter` 限制page size
+  - 使用 `Limit Parameter` 限制 **Request返回的最大结果数量**
   - `Parallel Scan` 的使用场景
     -  Table Size > `20GB`
     -  Table `Provisioned Read Throughput` 没有被充分利用
@@ -459,6 +459,85 @@
     `Scan(TotalSegments=4, Segment=3, ...)`
   - CLI使用例
     `aws dynamodb scan --totalsegments x --segment y ...`
+  - Request Sample
+    ```json
+    {
+      "AttributesToGet": [ "string" ],
+      "ConditionalOperator": "string",
+      "ConsistentRead": boolean,
+      "ExclusiveStartKey": { 
+          "string" : { 
+            "B": blob,
+            "BOOL": boolean,
+            "BS": [ blob ],
+            "L": [ 
+                "AttributeValue"
+            ],
+            "M": { 
+                "string" : "AttributeValue"
+            },
+            "N": "string",
+            "NS": [ "string" ],
+            "NULL": boolean,
+            "S": "string",
+            "SS": [ "string" ]
+          }
+      },
+      "ExpressionAttributeNames": { 
+          "string" : "string" 
+      },
+      "ExpressionAttributeValues": { 
+          "string" : { 
+            "B": blob,
+            "BOOL": boolean,
+            "BS": [ blob ],
+            "L": [ 
+                "AttributeValue"
+            ],
+            "M": { 
+                "string" : "AttributeValue"
+            },
+            "N": "string",
+            "NS": [ "string" ],
+            "NULL": boolean,
+            "S": "string",
+            "SS": [ "string" ]
+          }
+      },
+      "FilterExpression": "string",
+      "IndexName": "string",
+      "Limit": number, #---------------Maximum iteme number of request
+      "ProjectionExpression": "string",
+      "ReturnConsumedCapacity": "string",
+      "ScanFilter": { 
+          "string" : { 
+            "AttributeValueList": [ 
+                { 
+                  "B": blob,
+                  "BOOL": boolean,
+                  "BS": [ blob ],
+                  "L": [ 
+                      "AttributeValue"
+                  ],
+                  "M": { 
+                      "string" : "AttributeValue"
+                  },
+                  "N": "string",
+                  "NS": [ "string" ],
+                  "NULL": boolean,
+                  "S": "string",
+                  "SS": [ "string" ]
+                }
+            ],
+            "ComparisonOperator": "string"
+          }
+      },
+      "Segment": number, #---------------Parallel Scan Segment Number of an individual segment
+      "Select": "string",
+      "TableName": "string",
+      "TotalSegments": number #---------------Parallel Scan Segment Total Number
+    }
+    ```
 - `Scan操作对于RCU的冲击`
   <img name=scan src=https://routescroll.github.io/GetImage.jpeg width=50% />
   - 降低Scan操作对RCU冲击的方法
@@ -633,6 +712,12 @@
   - 为Lambda添加 Environment Variable 时可以选择是否用 `Encrypt Helper` 对Environment Variable的Value进行加密, 并使用KMS作为加密/解密Key
   - 这样 Environment Variable 的Value在Console中会显示为加密后的字符串, Lambda代码中要使用该Environment Variable时需要通过KMS解密该 Environment Variable 的Value后才能使用<br>
     <img name=lambda-add-encrypt-env-val src=https://routescroll.github.io/lambda-add-encrypt-env-val.png width=50%><img name=lambda-encrypt-env-kms-samplecode src=https://routescroll.github.io/lambda-encrypt-env-kms-samplecode.png width=50%><img name=lambda-after-encrypt src=https://routescroll.github.io/lambda-after-encrypt.png width=50%>
+- **Lambda Desitination**
+  - For each execution status (i.e. **Success and Failure**), you can choose one destination from four options: 
+    1. another Lambda function
+    2. an SNS topic
+    3. an SQS standard queue
+    4. or EventBridge. 
 
 ## CloudWatch
 - Alarm
@@ -646,7 +731,7 @@
   - 用户自行创建 `Metric Filters` 可以在CloudWatch Log中搜索期望的值并数字化后作为Metric中的一维显示或用其设置Alarm
   - <font color=red>需要注意</font>: CloudWatch只会获取 `Metric Filters` 创建以后发生的Metric数据, 在此之前的Log不是新 `Metric Filter` 的查找对象
 - CloudWatch Event
-  - 使用`CloudWatch Event Rule`获取Service的各种变化,并传递给Targe(eg. Lambda)<br>
+  - 使用`CloudWatch Event Rule`获取Service的各种变化的数据(metadata), 并传递给Targe(eg. Lambda)<br>
   ![cloudwatch-event](https://routescroll.github.io/cloudwatch-rule.png)
 - CloudWatch Metric - `NetworkIn`
   - 该Metric只能看到连接用户数量, 看不到application的并发用户数量
@@ -829,6 +914,50 @@
 - 关于 `SCPs`
   - `SCPs` 用来控制用户权限(Service Control Policies)
     ![scps](https://routescroll.github.io/scps.png)
+  - 通过SCPs可以集中控制Organization中所有Account的最大权限
+    - 两种控制方法
+      1. **Deny List** 各种Action默认为Allow, 需要指定 **What Services & What Actions** 被Deny
+      ```json
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+              "Sid": "AllowsAllActions",
+              "Effect": "Allow",
+              "Action": "*",
+              "Resource": "*"
+          },
+          {
+              "Sid": "DenyDynamoDB", 
+              "Effect": "Deny",
+              "Action": "dynamodb:*",
+              "Resource": "*"
+          }
+        ]
+      }
+      ```
+      2. **Allow List** 各种Action默认为Deny, 需要指定 **What Services & What Actions** 被Allow
+      ```json
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+              "Sid": "DenyAllActions",
+              "Effect": "Deny",
+              "Action": "*",
+              "Resource": "*"
+          },
+          {
+              "Sid": "AllowDynamoDB", 
+              "Effect": "Allow",
+              "Action": "dynamodb:*",
+              "Resource": "*"
+          }
+        ]
+      }
+      ```
+- **IAM Policy**
+  - IAM Policy 隐式 Deny All Access, 除非显式指定 Allow Some Access
 - **Best Practic**
   - Use groups to assign permissions to users
   - Create standalone policies instead of using inline policies -> `Inline Policies` 只能应用于单一Entity, 不能被其他Entity复用
@@ -1082,7 +1211,8 @@
 - 获取 `Data Key` 的API
   - `GenerateDataKey` -> 从KMS获取Data Key(Plain Text), 该Data Key可用于加密数据
   - `GenerateDataKeyWithoutPlainText` -> 从KMS获取Data Key(Encrypted Text), 用于加密数据之前需要再调用KMS API解密该Data Key
-  - KMS只能直接加密不超过4096字节的数据, 所以不适于用来加密大型数据, 只能用于加密Key这类的小数据<br><br>
+  - KMS的CMK只能直接加密不超过4096字节的数据, 所以不适于用来加密大型数据, 只能用于加密Key这类的小数据
+  - 要加密大型数据还是要使用Data Key<br><br>
     用户指定一个对称加密KMS Key, 用于加密生成的`Data Key`
     ![generate-data-key](https://routescroll.github.io/generate-data-key.jpeg)
 
@@ -1127,24 +1257,31 @@
   - 如果Bucket Policy设置了 `强制上传加密`, 那么客户端 `PutObject` API的Header中一定要加入 `x-amz-server-side-encryption` 选项才能合规
   - 在这中情形下, 只在Bucket上设定 `Serside Encryption` 并不足以合规(符合Policy)
   - Polic例
-    > {<br>
-    &ensp;&ensp;"Version": "2012-10-17",<br>
-    &ensp;&ensp;"Id": "PutObjectPolicy",<br>
-    &ensp;&ensp;"Statement": [<br>
-    &ensp;&ensp;&ensp;&ensp;{<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Sid": "DenyIncorrectEncryptionHeader",<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Effect": "Deny",<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Principal": "*",<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Action": "s3:PutObject",<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Resource": "arn:aws:s3:::awsexamplebucket1/*",<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Condition": {<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"StringNotEquals": {<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;<font color=red>"s3:x-amz-server-side-encryption": "AES256"</font><br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;}<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;}<br>
-    &ensp;&ensp;&ensp;&ensp;}<br>
-    &ensp;&ensp;]<br>
-  }<br>
+    ```json
+    {
+      "Version": "2012-10-17",
+      "Id": "PutObjectPolicy",
+      "Statement": [{
+        "Sid": "DenyIncorrectEncryptionHeader",
+        "Effect": "Deny",
+        "Principal": "*",
+        "Action": "s3:PutObject",
+        "Resource": "arn:aws:s3:::awsexamplebucket1/*",
+        "Condition": {
+          "StringNotEquals": {
+            "s3:x-amz-server-side-encryption": "AES256"
+          }
+        }
+      }]
+    }
+    ```
+    > <br>
+  - **S3 Security Transport**
+    - 使用 Bucket Policy 强制访问S3使用加密<br>
+    <img name=s3-security-transit src=https://routescroll.github.io/s3-security-transit.jpeg width=50%>
+- **S3 Transfer Acceleration**
+  - 借用CloudFront加快用户上传文件到S3的速度
+
 
 ## Elastic Cache
 - `Redis`
@@ -1169,6 +1306,12 @@
   > sam package / sam deploy 同样适用
   1. run `aws cloudformation package --template-file /path_to_template/template.json --s3-bucket bucket-name --output-template-file packaged-template.json`
   2. run `aws cloudformation deploy xxxxx`
+- **Change Set**
+  - 创建Change Set, 并且可以 **View Change Set** 从而在真正应用变更之前可以明确更改会对当前Resource造成哪些影响, 进而决定是否应用本次更改或做进一步变更后再应用更改
+- **Stack Cross-Account**
+  - Stack可以 Cross-Account 进行部署<br>
+    <img name=cloudformation-stack-cross-account src=https://routescroll.github.io/cloudformation-stack-cross-account.jpeg width=50%>
+
 
 ## Resource Group
 - 可以把想要监控的Resource聚合成一个组, 显示到Management Console首页, 方便管理, 不需要在各个Service之间跳来跳去
@@ -1232,10 +1375,25 @@
     ![vpc-flow-level](https://routescroll.github.io/vpc-flow-level.png)
   
 ## Kinesis
+- Structure<br>
+  <img name=kniesis-structure src=https://routescroll.github.io/kniesis-structure.jpeg width=50%>
 - `Kinesis Client Library` 运行在Consumer EC2集群里, 负责处理数据
   ![kinesis-flow.png](https://routescroll.github.io/kinesis-flow.png)
 - 支持 Server-side 加密, 从Stream写入Storage Layer之前会被加密, 从Stroage Layer取出的时候会被解密
   - 支持使用KMS加密
+- `Shard` 中的数据默认保持24小时, 最高保持168小时后就会从Shard中删除
+- `Shards` 与 `Worker/Processor` 的数量关系
+  `Worker/Processor` 的数量不能多于(没必要多于) Shards数量, 一个一个Shard对应一个EC2 `Worker/Processor`, 但是一个 `Worker/Processor` 可以对应多个Shards<br>
+  <img name=kinesis-shards-workers src=https://routescroll.github.io/kinesis-shards-workers.png width=50%>
+- Stream重新分片
+  - Scale Up/Down 的目标Shard值推荐为当前Shard值的 25%/50%/75%/100%. 指定其他比例的值可能会导致重新分片更慢
+  - 一些限制
+    1. **每24小时重**新分片次数不**超过10次**/Stream
+    2. Scale up 不超过当前Shard数的**2倍**/Stream
+    3. Scale down 不超过当前Shard数的一半/Stream
+    4. Scale up 不超过500 Shards/Stream
+    5. Scale down 不超过500, 除非 Scale down后的数量低于500
+    6. Scale up 不超过当前账户Shard数限制
 
 ## STS (Security Token Service)
 - Typically, you use **`GetSessionToken`** if you want to **`use MFA`** to **`protect programmatic calls to`** specific **`AWS API`** operations
@@ -1252,6 +1410,11 @@
 - 关于Message `VisibilityTimeout` 可见期间
   - 如果Messenger的Consumer在 `VisibilityTimout` 期间没有完成处理, 那么Message会再次出现在Queue中, 有可能会被其他Consumer接收到, 造成同一Message重复处理<br>
   <img name=sqs-visibility-timeout src=https://routescroll.github.io/sqs-visibility-timeout.png width=50%>
+
+## AWS Batch
+- 需要EC2支持, 不属于Serverless
+
+---
 
 # 个别题型
 ### A developer is creating an Auto Scaling group of Amazon EC2 instances. The developer needs to publish a custom metric to Amazon CloudWatch. Which method would be the MOST secure way to authenticate a CloudWatch PUT request? 
@@ -1377,6 +1540,105 @@ INCORRECT: "There are insufficient write capacity units on the primary table" is
 References: 
 
 https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html 
+
+
+### 问题 22：  要回看教程 DynamoDB
+
+跳过 
+
+A Developer needs to return a list of items in a global secondary index from an Amazon DynamoDB table. 
+
+Which DynamoDB API call can the Developer use in order to consume the LEAST number of read capacity units? 
+
+Query operation using eventually-consistent reads 
+
+（正确） 
+
+Query operation using strongly-consistent reads 
+
+Scan operation using strongly-consistent reads 
+
+Scan operation using eventually-consistent reads 
+
+注解 
+
+The Query operation finds items based on primary key values. You can query any table or secondary index that has a composite primary key (a partition key and a sort key). 
+
+For items up to 4 KB in size, one RCU equals one strongly consistent read request per second or two eventually consistent read requests per second. Therefore, using eventually consistent reads uses fewer RCUs. 
+
+CORRECT: "Query operation using eventually-consistent reads" is the correct answer. 
+
+INCORRECT: "Query operation using strongly-consistent reads" is incorrect as strongly-consistent reads use more RCUs than eventually consistent reads. 
+
+INCORRECT: "Scan operation using eventually-consistent reads" is incorrect. The Scan operation returns one or more items and item attributes by accessing every item in a table or a secondary index and therefore uses more RCUs than a query operation. 
+
+INCORRECT: "Scan operation using strongly-consistent reads" is incorrect. The Scan operation returns one or more items and item attributes by accessing every item in a table or a secondary index and therefore uses more RCUs than a query operation. 
+
+References: 
+
+https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html 
+
+https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.ReadWriteCapacityMode.html 
+
+Save time with our AWS cheat sheets: 
+
+https://digitalcloud.training/amazon-dynamodb/ 
+
+### 问题 24：  要回看教程 X-Rays
+
+跳过 
+
+An application is being instrumented to send trace data using AWS X-Ray. A Developer needs to upload segment documents using JSON-formatted strings to X-Ray using the API. Which API action should the developer use? 
+
+The PutTelemetryRecords API action 
+
+The GetTraceSummaries API action 
+
+The PutTraceSegments API action 
+
+（正确） 
+
+The UpdateGroup API action 
+
+注解 
+
+You can send trace data to X-Ray in the form of segment documents. A segment document is a JSON formatted string that contains information about the work that your application does in service of a request. Your application can record data about the work that it does itself in segments, or work that uses downstream services and resources in subsegments. 
+
+Segments record information about the work that your application does. A segment, at a minimum, records the time spent on a task, a name, and two IDs. The trace ID tracks the request as it travels between services. The segment ID tracks the work done for the request by a single service. 
+
+Example Minimal complete segment: 
+
+"name" : "Scorekeep" , 
+"id" 
+: "7Øde5b6f19ff9aOa" , 
+" start _ time" 
+1.4782933612710, 
+"trace_id" 
+: "1-581cf771-aØ06649127e371903a2de979" , 
+"end_time" 
+1 .4782933614490 
+You can upload segment documents with the PutTraceSegments API. The API has a single parameter, TraceSegmentDocuments, that takes a list of JSON segment documents. 
+
+Therefore, the Developer should use the PutTraceSegments API action. 
+
+ 
+ 
+
+CORRECT: "The PutTraceSegments API action" is the correct answer. 
+
+INCORRECT: "The PutTelemetryRecords API action" is incorrect as this is used by the AWS X-Ray daemon to upload telemetry. 
+
+INCORRECT: "The UpdateGroup API action" is incorrect as this updates a group resource. 
+
+INCORRECT: "The GetTraceSummaries API action" is incorrect as this retrieves IDs and annotations for traces available for a specified time frame using an optional filter. 
+
+References: 
+
+https://docs.aws.amazon.com/xray/latest/devguide/xray-api-sendingdata.html 
+
+Save time with our AWS cheat sheets: 
+
+https://digitalcloud.training/aws-developer-tools/ 
 
 ### 问题 49：要回看教程 X-Rays
 
