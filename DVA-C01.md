@@ -94,7 +94,7 @@
   - 可选项
   - 在Build Phase后执行,用于发布Build后的jar/war或Docker Image等
   - **<font color=red >finall block</font>** 中的命令无论 **<font color=red >command block</font>** 的执行结果是否成功都会执行
-- buildspec sample
+- buildspec sample<br>
   ```yaml
     version: 0.2
 
@@ -208,6 +208,7 @@
       paths:
         - path
         - path
+  ```
 - Environment Variable
   - 所有环境变量总长度不能超过`5500`个字符
   - 可用`System Manager Parameter Store`保存多个Environment Variable,每个Environment Variable不超过`4096`字符,然后在`buildsped.yml`中从`System Manager Parameter Store`中取得这些变量
@@ -239,15 +240,32 @@
   1. **distinctInstance**
   2. **memberOf** (定义方法: <font color=red>Cluster Query Language</font>)
   
-    |Format|Sample|
-    |-|-|
-    |subject operator [argument]|attribute:ecs.instance-type == t2.small|
-    ||attribute:ecs.availability-zone in [us-east-1a, us-east-1b]|
-    ||task:group == service:production|
-    ||not(task:group == database)|
-    ||runningTasksCount == 1|
-    ||ec2InstanceId in ['i-abcd1234', 'i-wxyx7890']|
-    ||attribute:ecs.instance-type =~ g2.* and attribute:ecs.availability-zone != us-east-1d|
+      |Format|Sample|
+      |-|-|
+      |subject operator [argument]|attribute:ecs.instance-type == t2.small|
+      ||attribute:ecs.availability-zone in [us-east-1a, us-east-1b]|
+      ||task:group == service:production|
+      ||not(task:group == database)|
+      ||runningTasksCount == 1|
+      ||ec2InstanceId in ['i-abcd1234', 'i-wxyx7890']|
+      ||attribute:ecs.instance-type =~ g2.* and attribute:ecs.availability-zone != us-east-1d|
+
+   3. Cluster query language
+
+      |Operator|Description|
+      |-|-|
+      |==, equals|String equality|
+      |!=, not_equals|String inequality|
+      |>, greater_than|Greater than|
+      |>=, greater_than_equal|Greater than or equal to|
+      |<, less_than|Less than|
+      |<=, less_than_equal|Less than or equal to|
+      |exists|Subject exists|
+      |!exists, not_exists|Subject doesn't exist|
+      |in|Value in argument list|
+      |!in, not_in|Value not in argument list|
+      |=~, matches|Pattern match|
+      |!~, not_matches|Pattern mismatch|
 
 - `Environment` 定义
   - 需要在Task Definition中定义`Enviroment`才能传递给container
@@ -718,6 +736,7 @@
     2. an SNS topic
     3. an SQS standard queue
     4. or EventBridge. 
+- **Lambda不能创建Endpoint, 只能连接到VPC(或者说 Add a Lambda to the VPC)**
 
 ## CloudWatch
 - Alarm
@@ -773,6 +792,8 @@
     |Uniqueness|Use **`each key only once`** in **`each configuration file`**|
 
     ![ebs-config-files](https://routescroll.github.io/ebs-config-files.jpeg)
+  - **dockerrun.aws.json**
+    - 描述如何将远程Docker Image部署为一个Elastic Beanstalk Application
 - 关于`启用X-Rays Daemon`
   - 可以在Beanstalk的Console中启用
   - 可以在Beanstalk的Source code中启用
@@ -998,7 +1019,7 @@
   - `Client Library` 与云端Cognito Service进行数据同步, 从而使用户在多个设备上都能保持同样的Identity Data同步
 
 - 关于 `Unauthenticated identities(users)`
-  - Cognito支持允许用户在不登录的情况下获取有限的访问权限, 设置简单, 只需增加一个有限权限的Role并分配给 `Unauthenticated users`
+  - Cognito **identity pools** 支持允许用户在不登录的情况下获取有限的访问权限, 设置简单, 只需增加一个有限权限的Role并分配给 `Unauthenticated users`
 
 ## Step Function
 - `Fields Filter` , 用于从InputJSON中选择特定项目使用
@@ -1281,6 +1302,9 @@
     <img name=s3-security-transit src=https://routescroll.github.io/s3-security-transit.jpeg width=50%>
 - **S3 Transfer Acceleration**
   - 借用CloudFront加快用户上传文件到S3的速度
+- **S3 Policy Variable**
+  - **${xxxxx}** 就是这个所谓的Variable, 可以被花括号内的内容动态替换<br>
+  <img name=s3-policy-variable src=https://routescroll.github.io/s3-policy-variable.jpeg width=50%>
 
 
 ## Elastic Cache
@@ -1377,8 +1401,13 @@
 ## Kinesis
 - Structure<br>
   <img name=kniesis-structure src=https://routescroll.github.io/kniesis-structure.jpeg width=50%>
-- `Kinesis Client Library` 运行在Consumer EC2集群里, 负责处理数据
+- `Kinesis Client Library (KCL)` 运行在Consumer EC2集群里, 负责处理数据
   ![kinesis-flow.png](https://routescroll.github.io/kinesis-flow.png)
+- `Kinesis Producer Library (KPL)` 运行在Producer端, 可以协助Producer端更好的利用Shards Throughput
+  1. 自动向1个或多个Data Stream写入数据并且带有可配制的Retry机制
+  2. 可以使用 `PutRecords` 在一次Request中向多个Shards写入多个Records
+  3. 与KCL配合在Consumer端分解Batched Data
+  4. 向CloudWatch写入Metric以提供Producer性能的可视化
 - 支持 Server-side 加密, 从Stream写入Storage Layer之前会被加密, 从Stroage Layer取出的时候会被解密
   - 支持使用KMS加密
 - `Shard` 中的数据默认保持24小时, 最高保持168小时后就会从Shard中删除
@@ -1394,6 +1423,14 @@
     4. Scale up 不超过500 Shards/Stream
     5. Scale down 不超过500, 除非 Scale down后的数量低于500
     6. Scale up 不超过当前账户Shard数限制
+- **Fireose**<br>
+  <img name=kenesis-firehose src=https://routescroll.github.io/kenesis-firehose.png width=50%>
+
+  - 支持的存储目标
+  1. S3
+  2. RedShift
+  3. ElasticSearch
+  4. splunk
 
 ## STS (Security Token Service)
 - Typically, you use **`GetSessionToken`** if you want to **`use MFA`** to **`protect programmatic calls to`** specific **`AWS API`** operations
@@ -1410,20 +1447,66 @@
 - 关于Message `VisibilityTimeout` 可见期间
   - 如果Messenger的Consumer在 `VisibilityTimout` 期间没有完成处理, 那么Message会再次出现在Queue中, 有可能会被其他Consumer接收到, 造成同一Message重复处理<br>
   <img name=sqs-visibility-timeout src=https://routescroll.github.io/sqs-visibility-timeout.png width=50%>
+- Amazon SQS only supports messages up to **256KB** in size
+  - Message高于256KB情况下需要用S3存储Message, 并且配合 **SQS Extended Client Library for Java** 来管理Message
 
 ## AWS Batch
 - 需要EC2支持, 不属于Serverless
 
+## AWS Shield DDoS防火墙
+## AWS Inspector
+  - 对于部署在AWS上的Application进行安全评估(漏洞, 脆弱性, 偏差)
+  - 生成安全问题列表(以安全等级排序)
+  - 被发现的安全问题可以直接Review, 也可以作为评估报告详细的一部分(通过Inspector Console or API)
 ---
 
 # 个别题型
-### A developer is creating an Auto Scaling group of Amazon EC2 instances. The developer needs to publish a custom metric to Amazon CloudWatch. Which method would be the MOST secure way to authenticate a CloudWatch PUT request? 
+### Test3-Incorrect-问题 56： 不正确 
 
-- Create an IAM role with the PutMetricData permission and create a new Auto Scaling launch configuration to launch instances using that role （正确）
-- Create an IAM role with the PutMetricData permission and modify the Amazon EC2 instances to use that role （错误）
-- > INCORRECT: "Create an IAM role with the PutMetricData permission and modify the Amazon EC2 instances to use that role" is incorrect as you <font color=red>should create a new launch configuration</font> for the Auto Scaling group <font color=red>rather than updating the instances manually</font>.
+A developer is creating an Auto Scaling group of Amazon EC2 instances. The developer needs to publish a custom metric to Amazon CloudWatch. Which method would be the MOST secure way to authenticate a CloudWatch PUT request? 
 
-### 问题 23：要回看教程 DynamoDB
+Create an IAM role with the PutMetricData permission and create a new Auto Scaling launch configuration to launch instances using that role 
+
+（正确） 
+
+Create an IAM role with the PutMetricData permission and modify the Amazon EC2 instances to use that role 
+
+（错误） 
+
+Modify the CloudWatch metric policies to allow the PutMetricData permission to instances from the Auto Scaling group 
+
+Create an IAM user with the PutMetricData permission and modify the Auto Scaling launch configuration to inject the user credentials into the instance user data 
+
+注解 
+
+The most secure configuration to authenticate the request is to create an IAM role with a permissions policy that only provides the minimum permissions requires (least privilege). This IAM role should have a customer-managed permissions policy applied with the PutMetricData allowed. 
+
+The PutMetricData API publishes metric data points to Amazon CloudWatch. CloudWatch associates the data points with the specified metric. If the specified metric does not exist, CloudWatch creates the metric. When CloudWatch creates a metric, it can take up to fifteen minutes for the metric to appear in calls to ListMetrics. 
+
+The following images shows a permissions policy being created with the permission: 
+...
+
+CORRECT: "Create an IAM role with the PutMetricData permission and create a new Auto Scaling launch configuration to launch instances using that role" is the correct answer 
+
+INCORRECT: "Modify the CloudWatch metric policies to allow the PutMetricData permission to instances from the Auto Scaling group" is incorrect as this is not possible. You should instead grant the permissions through a permissions policy and attach that to a role that the EC2 instances can assume. 
+
+INCORRECT: "Create an IAM user with the PutMetricData permission and modify the Auto Scaling launch configuration to inject the user credentials into the instance user data" is incorrect. You cannot “inject user credentials” using a launch configuration. Instead, you can attach an IAM role which allows the instance to assume the role and take on the privileges allowed through any permissions policies that are associated with that role. 
+
+INCORRECT: "Create an IAM role with the PutMetricData permission and modify the Amazon EC2 instances to use that role" is incorrect as you should <font color=red>create a new launch configuration for the Auto Scaling group rather than updating the instances manually.</font>
+
+References: 
+
+https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html 
+
+https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_PutMetricData.html 
+
+Save time with our AWS cheat sheets: 
+
+https://digitalcloud.training/aws-iam/ 
+
+https://digitalcloud.training/amazon-ec2/ 
+
+### Test3-Skipped-问题 23：要回看教程 DynamoDB
 
 跳过 
 
@@ -1503,7 +1586,7 @@ Save time with our AWS cheat sheets:
 
 https://digitalcloud.training/amazon-dynamodb/ 
 
-### 问题 54：要回看教程 DynamoDB
+### Test3-Skipped-问题 54：要回看教程 DynamoDB
 
 跳过 
 
@@ -1542,7 +1625,7 @@ References:
 https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html 
 
 
-### 问题 22：  要回看教程 DynamoDB
+### Test5-Skipped-问题 22：  要回看教程 DynamoDB
 
 跳过 
 
@@ -1584,7 +1667,7 @@ Save time with our AWS cheat sheets:
 
 https://digitalcloud.training/amazon-dynamodb/ 
 
-### 问题 24：  要回看教程 X-Rays
+### Test5-Skipped-问题 24：  要回看教程 X-Rays
 
 跳过 
 
@@ -1640,7 +1723,7 @@ Save time with our AWS cheat sheets:
 
 https://digitalcloud.training/aws-developer-tools/ 
 
-### 问题 49：要回看教程 X-Rays
+### Test3-Skipped-问题 49：要回看教程 X-Rays
 
 跳过 
 
@@ -1684,7 +1767,7 @@ Save time with our AWS cheat sheets:
 
 https://digitalcloud.training/aws-developer-tools/ 
 
-### 问题 53：要回看教程 X-Rays
+### Test3-Skipped-问题 53：要回看教程 X-Rays
 
 跳过 
 
@@ -1738,6 +1821,74 @@ INCORRECT: "Use a filter expression to search for the user field in the segment 
 References: 
 
 https://docs.aws.amazon.com/xray/latest/devguide/xray-api-segmentdocuments.html 
+
+Save time with our AWS cheat sheets: 
+
+https://digitalcloud.training/aws-developer-tools/ 
+
+### Test6-Skipped-问题 36：要回看教程 X-Rays
+
+跳过 
+
+A Development team wants to instrument their code to provide more detailed information to AWS X-Ray than simple outgoing and incoming requests. This will generate large amounts of data, so the Development team wants to implement indexing so they can filter the data. 
+
+What should the Development team do to achieve this? 
+
+Install required plugins for the appropriate AWS SDK 
+
+Configure the necessary X-Ray environment variables 
+
+Add annotations to the segment document 
+
+（正确） 
+
+Add metadata to the segment document 
+
+注解 
+
+AWS X-Ray makes it easy for developers to analyze the behavior of their production, distributed applications with end-to-end tracing capabilities. You can use X-Ray to identify performance bottlenecks, edge case errors, and other hard to detect issues. 
+
+When you instrument your application, the X-Ray SDK records information about incoming and outgoing requests, the AWS resources used, and the application itself. You can add other information to the segment document as annotations and metadata. Annotations and metadata are aggregated at the trace level and can be added to any segment or subsegment. 
+
+Annotations are simple key-value pairs that are indexed for use with filter expressions. Use annotations to record data that you want to use to group traces in the console, or when calling the GetTraceSummaries API. X-Ray indexes up to 50 annotations per trace. 
+
+Metadata are key-value pairs with values of any type, including objects and lists, but that are not indexed. Use metadata to record data you want to store in the trace but don't need to use for searching traces. 
+
+You can view annotations and metadata in the segment or subsegment details in the X-Ray console. 
+
+Subsegment - ## GameModel.saveGame 
+Overview 
+-resources- 
+-gane-: 
+Resources 
+Annotations 
+Metadata 
+Exceptions 
+-session-: "IC6r.m1DN% 
+-nane-: gane% 
+-users- 
+-mEKIOt9L% 
+"S7Q90REO- 
+-rules-: "TicTacToe-, 
+-start_tine-: 148953665359, 
+-states- : 
+"'SS37H81% 
+-m87PSQEH" 
+x 
+Close 
+In this scenario, we need to add annotations to the segment document so that the data that needs to be filtered is indexed. 
+
+CORRECT: "Add annotations to the segment document" is the correct answer. 
+
+INCORRECT: "Add metadata to the segment document" is incorrect as metadata is not indexed for filtering. 
+
+INCORRECT: "Configure the necessary X-Ray environment variables" is incorrect as this will not result in indexing of the required data. 
+
+INCORRECT: "Install required plugins for the appropriate AWS SDK" is incorrect as there are no plugin requirements for the AWS SDK to support this solution as the annotations feature is available in AWS X-Ray. 
+
+References: 
+
+https://docs.aws.amazon.com/xray/latest/devguide/xray-concepts.html#xray-concepts-annotations 
 
 Save time with our AWS cheat sheets: 
 
