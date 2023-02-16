@@ -469,13 +469,17 @@
   -  > 默认情况下，Scan 操作按顺序处理数据。Amazon DynamoDB 以 1 MB 的增量向应用程序返回数据，应用程序执行其他 Scan 操作检索接下来 1 MB 的数据。扫描的表或索引越大，Scan 完成需要的时间越长。此外，一个顺序 Scan 可能并不总是能够充分利用预置读取吞吐量容量：即使 DynamoDB 跨多个物理分区分配大型表的数据，Scan 操作一次只能读取一个分区。出于这个原因，Scan 受到单个分区的最大吞吐量限制。为了解决这些问题，Scan操作可以逻辑地将表或二级索引分成多个分段，多个应用程序工作进程并行扫描这些段。每个工作进程可以是一个线程（在支持多线程的编程语言中），也可以是一个操作系统进程。要执行并行扫描，每个工作进程都会发出自己的 Scan 请求，并使用以下参数：
     Segment — 要由特定工作进程扫描的段。每个工作进程应使用不同的 Segment 值。
     TotalSegments — 并行扫描的片段总数。该值必须与应用程序将使用的工作进程数量相同。
-    <img name=parallelscan src=https://routescroll.github.io/ParallelScan.png width=50% />
-  - nodejs使用例
-    `Scan(TotalSegments=4, Segment=0, ...)`
-    `Scan(TotalSegments=4, Segment=1, ...)`
-    `Scan(TotalSegments=4, Segment=2, ...)`
-    `Scan(TotalSegments=4, Segment=3, ...)`
-  - CLI使用例
+    
+    
+    <img name=parallelscan src=https://routescroll.github.io/ParallelScan.png width=50% /><br>
+  - nodejs使用例<br>
+    ```JavaScript
+    Scan(TotalSegments=4, Segment=0, ...)
+    Scan(TotalSegments=4, Segment=1, ...)
+    Scan(TotalSegments=4, Segment=2, ...)
+    Scan(TotalSegments=4, Segment=3, ...)
+    ```
+  - CLI使用例<br>
     `aws dynamodb scan --totalsegments x --segment y ...`
   - Request Sample
     ```json
