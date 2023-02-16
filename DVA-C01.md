@@ -685,6 +685,11 @@
   ```
   > **<font size=5 color=red>Important</font>**
   > 如果使用dynamodb:Attributes，则必须指定表的所有主键和索引键属性的名称(在**Resource**中指定)，以及策略中列出的任何辅助索引的名称。否则，DynamoDB不能使用这些关键属性来执行请求的操作。
+- **GSI 与 RCU/WCU**
+  - GSI 也需要分配RCU/WCU
+  - PrimaryTable向IndexTable同步数据时会消耗Index的WCU
+  - Index的WCU分配不足时会使PrimaryTable出现限流错误(Throttling Error)
+  - 起码要为IndexTable分配和PrimaryTable一样多的WCU/RCU
 
 ## Lambda
 - Lambda部署
@@ -919,6 +924,14 @@
 - 用来`Tracing Application`整体流程和性能,帮助找到性能瓶颈等<br>
   ![xray](https://routescroll.github.io/xary.jpeg)<br>
   ![xray-structure](https://routescroll.github.io/x-rays-structure.jpeg)
+- **Annotation** & **Metadata**
+  - **Annotation**
+    - 用来记录想要用来分组的traces, 可以Index, 可以Search, 可以Filter
+  - **Metadata**
+    - 用来记录用户希望保存到traces的追加数据, 不可Index, 不可Search, 不可Filter
+  - 追加目标
+    - 由 **X-Ray** 创建的 **segment**
+    - 由 **用户自定义** 的 **subsegment**
   
 
 ## IAM
@@ -1513,13 +1526,8 @@ https://digitalcloud.training/amazon-ec2/
 A gaming company is building an application to track the scores for their games using an Amazon DynamoDB table. Each item in the table is identified by a partition key 
 (user_id) and a sort key (game_name). The table also includes the attribute “TopScore”. The table design is shown below: 
 
-Primary key* 
-Partition key 
-user id 
-OAdd sort key 
-game_name 
-String 
-String 
+<img src=https://routescroll.github.io/test3-23.jpeg width=50%>
+
 A Developer has been asked to write a leaderboard application to display the highest achieved scores for each game (game_name), based on the score identified in the “TopScore” attribute. 
 
 What process will allow the Developer to extract results MOST efficiently from the DynamoDB table? 
@@ -1548,26 +1556,8 @@ To speed up queries on non-key attributes, you can create a global secondary ind
 
 For this scenario we need to identify the top achieved score for each game. The most efficient way to do this is to create a global secondary index using “game_name” as the partition key and “TopScore” as the sort key. We can then efficiently query the global secondary index to find the top achieved score for each game. 
 
-Add index 
-Primary key* 
-Index name* 
-Projected attributes 
-Partition key 
-game_name 
-O Add sort key 
-TopScore 
-game_name-TopScore-index 
-All 
-n Create as Local Secondary Index 
-Cancel 
-String 
-String 
-x 
-o 
-O 
-O 
-O 
-Add index 
+<img src=https://routescroll.github.io/test3-23-index.jpeg width=50%>
+
 CORRECT: "Create a global secondary index with a partition key of “game_name” and a sort key of “TopScore” and get the results based on the score attribute" is the correct answer. 
 
 INCORRECT: "Create a local secondary index with a partition key of “game_name” and a sort key of “TopScore” and get the results based on the score attribute" is incorrect. With a local secondary index you can have a different sort key but the partition key is the same. 
