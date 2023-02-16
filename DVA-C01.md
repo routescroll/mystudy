@@ -560,7 +560,7 @@
       "TotalSegments": number #---------------Parallel Scan Segment Total Number
     }
     ```
-- `Scan操作对于RCU的冲击`
+- `Scan操作对于RCU的冲击`<br>
   <img name=scan src=https://routescroll.github.io/GetImage.jpeg width=50% />
   - 降低Scan操作对RCU冲击的方法
     - Reduce Page Size(Query操作也适用)
