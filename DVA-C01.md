@@ -469,17 +469,13 @@
   -  > 默认情况下，Scan 操作按顺序处理数据。Amazon DynamoDB 以 1 MB 的增量向应用程序返回数据，应用程序执行其他 Scan 操作检索接下来 1 MB 的数据。扫描的表或索引越大，Scan 完成需要的时间越长。此外，一个顺序 Scan 可能并不总是能够充分利用预置读取吞吐量容量：即使 DynamoDB 跨多个物理分区分配大型表的数据，Scan 操作一次只能读取一个分区。出于这个原因，Scan 受到单个分区的最大吞吐量限制。为了解决这些问题，Scan操作可以逻辑地将表或二级索引分成多个分段，多个应用程序工作进程并行扫描这些段。每个工作进程可以是一个线程（在支持多线程的编程语言中），也可以是一个操作系统进程。要执行并行扫描，每个工作进程都会发出自己的 Scan 请求，并使用以下参数：
     Segment — 要由特定工作进程扫描的段。每个工作进程应使用不同的 Segment 值。
     TotalSegments — 并行扫描的片段总数。该值必须与应用程序将使用的工作进程数量相同。
-    
-    
-    <img name=parallelscan src=https://routescroll.github.io/ParallelScan.png width=50% /><br>
-  - nodejs使用例<br>
-    ```JavaScript
-    Scan(TotalSegments=4, Segment=0, ...)
-    Scan(TotalSegments=4, Segment=1, ...)
-    Scan(TotalSegments=4, Segment=2, ...)
-    Scan(TotalSegments=4, Segment=3, ...)
-    ```
-  - CLI使用例<br>
+    <img name=parallelscan src=https://routescroll.github.io/ParallelScan.png width=50% />
+  - nodejs使用例
+    `Scan(TotalSegments=4, Segment=0, ...)`
+    `Scan(TotalSegments=4, Segment=1, ...)`
+    `Scan(TotalSegments=4, Segment=2, ...)`
+    `Scan(TotalSegments=4, Segment=3, ...)`
+  - CLI使用例
     `aws dynamodb scan --totalsegments x --segment y ...`
   - Request Sample
     ```json
@@ -560,7 +556,7 @@
       "TotalSegments": number #---------------Parallel Scan Segment Total Number
     }
     ```
-- `Scan操作对于RCU的冲击`<br>
+- `Scan操作对于RCU的冲击`
   <img name=scan src=https://routescroll.github.io/GetImage.jpeg width=50% />
   - 降低Scan操作对RCU冲击的方法
     - Reduce Page Size(Query操作也适用)
@@ -1043,174 +1039,202 @@
   - `InputPath` -> 用于选择输入JSON特定项目
   - `OutputPath` -> 用于选择传往下个状态JSON特定项目(从Input中选择)
   - `ResultPath` -> 用于选择最终输出JSON特定项目(从Input中选择)
-      > 例如,原始Input JSON:
-    {<br>
-    &ensp;&ensp;&ensp;&ensp;"comment": "An input comment.",<br>
-    &ensp;&ensp;&ensp;&ensp;"data": {<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"val1": 23,<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"val2": 17<br>
-    &ensp;&ensp;&ensp;&ensp;},<br>
-    &ensp;&ensp;&ensp;&ensp;"extra": "foo",<br>
-    &ensp;&ensp;&ensp;&ensp;"lambda": {<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"who": "AWS Step Functions"<br>
-    &ensp;&ensp;&ensp;&ensp;}<br>
-    }<br><br>
-    Step Function定义<br>
-    {<br>
-    &ensp;&ensp;&ensp;&ensp;"Comment": "A Catch example of the Amazon States Language using an AWS Lambda function",<br>
-    &ensp;&ensp;&ensp;&ensp;"StartAt": "CreateAccount",<br>
-    &ensp;&ensp;&ensp;&ensp;"States": {<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"CreateAccount": {<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Type": "Task",<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Resource": "arn:aws:lambda:us-east-1:123456789012:function:FailFunction",<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;<font color=red>"InputPath": "\$.lambda",</font><font color=blue><-真正输入到Function中的只有lambda项目</font><br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;<font color=red>"OutputPath": "\$.data",</font><font color=blue><-传递个下一个状态Function的只有data项目</font><br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;<font color=red>"ResultPath": "\$.data.lambdaresult",</font><font color=blue><-输出结果会放到data.lambdaresult下面,输出的内容只有data项目</font><br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Catch": [ {<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"ErrorEquals": ["CustomError"],<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Next": "CustomErrorFallback"<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;<font color=red>"ResultPath": "$.data.error",</font></font><font color=blue><-发生异常时结果会放到data.error下面</font><br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;}, {<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"ErrorEquals": ["States.TaskFailed"],<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Next": "ReservedTypeFallback"<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;}, {<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"ErrorEquals": ["States.ALL"],<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Next": "CatchAllFallback"<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;} ],<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"End": true<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;},<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"CustomErrorFallback": {<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Type": "Pass",<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Result": "This is a fallback from a custom Lambda function exception",<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"End": true<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;},<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"ReservedTypeFallback": {<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Type": "Pass",<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Result": "This is a fallback from a reserved error code",<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"End": true<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;},<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"CatchAllFallback": {<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Type": "Pass",<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Result": "This is a fallback from any error code",<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"End": true<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;}<br>
-    &ensp;&ensp;&ensp;&ensp;}<br>
-    }<br>
-    - 回顾 - 原始输入JSON
-      >{<br>
-    &ensp;&ensp;&ensp;&ensp;"comment": "An input comment.",<br>
-    &ensp;&ensp;&ensp;&ensp;"data": {<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"val1": 23,<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"val2": 17<br>
-    &ensp;&ensp;&ensp;&ensp;},<br>
-    &ensp;&ensp;&ensp;&ensp;"extra": "foo",<br>
-    &ensp;&ensp;&ensp;&ensp;"lambda": {<br>
-    &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"who": "AWS Step Functions"<br>
-    &ensp;&ensp;&ensp;&ensp;}<br>
-    }<br>
-    - 过滤后Input:
-      >{<br>
-    &ensp;&ensp;&ensp;&ensp;<font color=blue>{"who": "AWS Step Functions"}</font><br>
-    }<br>
-    - 过滤后Output:
-      >{<br>
-    <font color=green>&ensp;&ensp;&ensp;&ensp;"val1": 23,<br>
-    &ensp;&ensp;&ensp;&ensp;"val2": 17</font><br>
-    }<br>
-    - 过滤后Result:
-      >{<br>
-    <font color=fuchsia>&ensp;&ensp;&ensp;&ensp;"val1": 23,<br>
-    &ensp;&ensp;&ensp;&ensp;"val2": 17</font><br>
-    }<br>
-    - 过滤后Exception:
-      >{<br>
-    <font color=orange>&ensp;&ensp;&ensp;&ensp;"val1": 23,<br>
-    &ensp;&ensp;&ensp;&ensp;"val2": 17<br>
-    &ensp;&ensp;&ensp;&ensp;"error": error message</font><br>
-    }<br>
+    - 例如,原始Input JSON<br>
+    ```json
+    {
+      "comment": "An input comment.",
+        "data": {
+        "val1": 23,
+        "val2": 17
+      },
+      "extra": "foo",
+      "lambda": {
+        "who": "AWS Step Functions"
+      }
+    }
+    ```
+    - Step Function定义<br>
+      ```json
+      {
+        "Comment": "A Catch example of the Amazon States Language using an AWS Lambda function",
+        "StartAt": "CreateAccount",
+        "States": {
+          "CreateAccount": {
+            "Type": "Task",
+            "Resource": "arn:aws:lambda:us-east-1:123456789012:function:FailFunction",
+            "InputPath": "\$.lambda", #----------真正输入到Function中的只有lambda项目
+            "OutputPath": "\$.data", #----------传递个下一个状态Function的只有data项目
+            "ResultPath": "\$.data.lambdaresult", #----------输出结果会放到data.lambdaresult下面,输出的内容只有data项目
+            "Catch": [ {
+              "ErrorEquals": ["CustomError"],
+              "Next": "CustomErrorFallback",
+              "ResultPath": "$.data.error", #----------发生异常时结果会放到data.error下面
+            }, {
+              "ErrorEquals": ["States.TaskFailed"],
+              "Next": "ReservedTypeFallback"
+            }, {
+              "ErrorEquals": ["States.ALL"],
+              "Next": "CatchAllFallback"
+            } ],
+            "End": true
+          },
+          "CustomErrorFallback": {
+            "Type": "Pass",
+            "Result": "This is a fallback from a custom Lambda function exception",
+            "End": true
+          },
+          "ReservedTypeFallback": {
+            "Type": "Pass",
+            "Result": "This is a fallback from a reserved error code",
+            "End": true
+          },
+          "CatchAllFallback": {
+            "Type": "Pass",
+            "Result": "This is a fallback from any error code",
+            "End": true
+          }
+        }
+      }
+      ```
+    - 回顾 - 原始输入JSON<br>
+      ```json
+      {
+        "comment": "An input comment.",
+        "data": {
+          "val1": 23,
+          "val2": 17
+        },
+        "extra": "foo",
+        "lambda": {
+          "who": "AWS Step Functions"
+        }
+      }
+      ```
+    - 过滤后Input:<br>
+      ```json 
+      {
+        {
+          "who": "AWS Step Functions"
+          }
+      }
+      ```
+    - 过滤后Output:<br>
+      ```json
+      {
+        "val1": 23,
+        "val2": 17
+      }
+      ```
+    - 过滤后Result:<br>
+      ```json
+      {
+        "val1": 23,
+        "val2": 17,
+        "lambdaresult": "some lambda results"
+      }
+      ```
+    - 过滤后Exception:<br>
+      ```json
+      {
+        "val1": 23,
+        "val2": 17,
+        "error": "error message"
+      }
+      ```
 
-- `Parameters` -> 从Input中选择某些项目重新组合成新的Input内容
-  > {<br>
-&ensp;&ensp;&ensp;&ensp;"comment": "Example for Parameters.",<br>
-&ensp;&ensp;&ensp;&ensp;"product": {<br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"details": {<br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"color": "blue",<br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;<font color=red>"size": "small",</font><br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"material": "cotton"<br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;},<br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;<font color=red>"availability": "in stock",</font><br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"sku": "2317",<br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"cost": "$23"<br>
-&ensp;&ensp;&ensp;&ensp;}<br>
-}<br>
-使用Parameters重新映射成新Input<br>
-"Parameters": {<br>
-&ensp;&ensp;&ensp;&ensp;"comment": "Selecting what I care about.",<br>
-&ensp;&ensp;&ensp;&ensp;"MyDetails": {<br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;<font color=red>"size.\$": "\$.product.details.size",</font><br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;<font color=red>"exists.\$": "\$.product.availability",</font><br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"StaticValue": "foo"<br>
-&ensp;&ensp;&ensp;&ensp;}<br>
-},<br>
-映射后的新Input<br>
-{<br>
-&ensp;&ensp;&ensp;&ensp;"comment": "Selecting what I care about.",<br>
-&ensp;&ensp;&ensp;&ensp;"MyDetails": {<br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;<font color=red>"size": "small",</font><br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;<font color=red>"exists": "in stock",</font><br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"StaticValue": "foo"<br>
-&ensp;&ensp;&ensp;&ensp;}<br>
-}<br>
-
-- `ResultSelector` 从输出结果中选择特定项目,应用于`ResultPath`之前
-  > 原始Result<br>
-{<br>
-&ensp;&ensp;&ensp;&ensp;<font color=red>"resourceType": "elasticmapreduce",</font><br>
-&ensp;&ensp;&ensp;&ensp;"resource": "createCluster.sync",<br>
-&ensp;&ensp;&ensp;&ensp;"output": {<br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"SdkHttpMetadata": {<br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"HttpHeaders": {<br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Content-Length": "1112",<br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Content-Type": "application/x-amz-JSON-1.1",<br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"Date": "Mon, 25 Nov 2019 19:41:29 GMT",<br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"x-amzn-RequestId": "1234-5678-9012"<br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;},<br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"HttpStatusCode": 200<br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;},<br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"SdkResponseMetadata": {<br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;"RequestId": "1234-5678-9012"<br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;},<br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;<font color=red>"ClusterId": "AKIAIOSFODNN7EXAMPLE"</font><br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;}<br>
-}<br>
-应用`ResultSelector`<br>
-"Create Cluster": {<br>
-&ensp;&ensp;&ensp;&ensp;"Type": "Task",<br>
-&ensp;&ensp;&ensp;&ensp;"Resource": "arn:aws:states:::elasticmapreduce:createCluster.sync",<br>
-&ensp;&ensp;&ensp;&ensp;"Parameters": {<br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;<font color=silver>snowsome parameters></font><br>
-&ensp;&ensp;&ensp;&ensp;},<br>
-&ensp;&ensp;&ensp;&ensp;"ResultSelector": {<br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;<font color=red>"ClusterId.$": "$.output.ClusterId",</font><br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;<font color=red>"ResourceType.$": "$.resourceType"</font><br>
-&ensp;&ensp;&ensp;&ensp;},<br>
-&ensp;&ensp;&ensp;&ensp;"ResultPath": "$.EMROutput",<br>
-&ensp;&ensp;&ensp;&ensp;"Next": "Next Step"<br>
-}<br>
-最终 Result<br>
-{<br>
-<font color=silver>"OtherDataFromInput": {},</font><br>
-&ensp;&ensp;&ensp;&ensp;"EMROutput": {<br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;<font color=red>"ResourceType": "elasticmapreduce",</font><br>
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;<font color=red>"ClusterId": "AKIAIOSFODNN7EXAMPLE"</font><br>
-&ensp;&ensp;&ensp;&ensp;}<br>
-}<br>
+- `Parameters` -> 从Input中选择某些项目重新组合成新的Input内容<br>
+  - 原始json<br>
+    ```json
+    {
+      "comment": "Example for Parameters.",
+      "product": {
+        "details": {
+        "color": "blue",
+        "size": "small", #--------映射对象:size
+        "material": "cotton"
+        },
+        "availability": "in stock", #--------映射对象:availability
+        "sku": "2317",
+        "cost": "$23"
+      }
+    }
+    ```
+  - 使用Parameters重新映射成新Input<br>
+    ```json 
+      "Parameters": {
+      "comment": "Selecting what I care about.",
+      "MyDetails": {
+        "size.\$": "\$.product.details.size", #--------size -> size
+        "exists.\$": "\$.product.availability", #-------- availability -> exists
+        "StaticValue": "foo"
+      }
+    }
+    ```
+  - 映射后的新Input<br>
+    ```json
+    {
+      "comment": "Selecting what I care about.",
+      "MyDetails": {
+        "size": "small", ###
+        "exists": "in stock", ###
+        "StaticValue": "foo"
+      }
+    }
+    ```
+- `ResultSelector` 从输出结果中选择特定项目,应用于`ResultPath`<br>
+  - 原始Result<br>
+    ```json
+    {
+      "resourceType": "elasticmapreduce", #--------被选择项目
+      "resource": "createCluster.sync",
+      "output": {
+        "SdkHttpMetadata": {
+            "HttpHeaders": {
+              "Content-Length": "1112",
+              "Content-Type": "application/x-amz-JSON-1.1",
+              "Date": "Mon, 25 Nov 2019 19:41:29 GMT",
+              "x-amzn-RequestId": "1234-5678-9012"
+            },
+            "HttpStatusCode": 200
+          },
+          "SdkResponseMetadata": {
+            "RequestId": "1234-5678-9012"
+        },
+        "ClusterId": "AKIAIOSFODNN7EXAMPLE" #--------被选择项目
+      }
+    }
+  - 应用`ResultSelector`<br>
+    ```json
+    "Create Cluster": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::elasticmapreduce:createCluster.sync",
+      "Parameters": {
+        "snowsome parameters"
+      },
+      "ResultSelector": {
+        "ClusterId.$": "$.output.ClusterId", #--------被选择项目放在了这里
+        "ResourceType.$": "$.resourceType" #--------被选择项目放在了这里
+      },
+      "ResultPath": "$.EMROutput",
+      "Next": "Next Step"
+    }
+    ```
+  - 最终 Result<br>
+    ```json 
+    {
+      "OtherDataFromInput": {},
+      "EMROutput": {
+        "ResourceType": "elasticmapreduce", ###
+        "ClusterId": "AKIAIOSFODNN7EXAMPLE" ###
+      }
+    }
+    ```
 
 - 可能的 `Destination`
-    > SNS<br>
-    > SQS<br>
-    > Lambda<br>
-    > EventBridge<br>
+    1. `SNS`
+    2. `SQS`
+    3. `Lambda`
+    4. `EventBridge`
 
 - State的Type
 
@@ -1444,10 +1468,10 @@
   <img name=kenesis-firehose src=https://routescroll.github.io/kenesis-firehose.png width=50%>
 
   - 支持的存储目标
-  1. S3
-  2. RedShift
-  3. ElasticSearch
-  4. splunk
+    1. S3
+    2. RedShift
+    3. ElasticSearch
+    4. splunk
 
 ## STS (Security Token Service)
 - Typically, you use **`GetSessionToken`** if you want to **`use MFA`** to **`protect programmatic calls to`** specific **`AWS API`** operations
