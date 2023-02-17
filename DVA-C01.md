@@ -335,11 +335,11 @@
   ![lambda-authorizer](http://routescroll.github.io/lambda-authorizer.png)
 - 几种API的Authorizer类型<br>
   **REST API**<br>
-  <img src=https://routescroll.github.io/authorizer-rest.png width=70% />
+  <img src=https://routescroll.github.io/authorizer-rest.png width=70% /><br>
   **WebSocket API**<br>
-  <img src=https://routescroll.github.io/authorizer-ws.png width=40% />
+  <img src=https://routescroll.github.io/authorizer-ws.png width=40% /><br>
   **HTTP API**<br>
-  <img src=https://routescroll.github.io/authorizer-http.png width=70% />
+  <img src=https://routescroll.github.io/authorizer-http.png width=70% /><br>
 
 - 关于 `Integration`
   - **AWS_PROXY & HTTP_PROXY**
@@ -471,10 +471,12 @@
     TotalSegments — 并行扫描的片段总数。该值必须与应用程序将使用的工作进程数量相同。
     <img name=parallelscan src=https://routescroll.github.io/ParallelScan.png width=50% />
   - nodejs使用例
-    `Scan(TotalSegments=4, Segment=0, ...)`
-    `Scan(TotalSegments=4, Segment=1, ...)`
-    `Scan(TotalSegments=4, Segment=2, ...)`
-    `Scan(TotalSegments=4, Segment=3, ...)`
+    ```JavaScript
+    Scan(TotalSegments=4, Segment=0, ...)
+    Scan(TotalSegments=4, Segment=1, ...)
+    Scan(TotalSegments=4, Segment=2, ...)
+    Scan(TotalSegments=4, Segment=3, ...)
+    ```
   - CLI使用例
     `aws dynamodb scan --totalsegments x --segment y ...`
   - Request Sample
@@ -557,7 +559,7 @@
     }
     ```
 - `Scan操作对于RCU的冲击`
-  <img name=scan src=https://routescroll.github.io/GetImage.jpeg width=50% />
+  <img name=scan src=https://routescroll.github.io/GetImage.jpeg width=50% /><br>
   - 降低Scan操作对RCU冲击的方法
     - Reduce Page Size(Query操作也适用)
       - Default Page Size:`1MB`
@@ -597,47 +599,47 @@
   - Identity-Based Polic允许用户访问某个或某些Talbe
 - 通过 `IAM Policy` 可以限制用户只能访问DynamoDB Talbe的某些Item/某些Attributes
   - **考虑一款手机游戏应用，让玩家可以选择和玩各种不同的游戏。该应用程序使用一个名为GameScores的DynamoDB表来跟踪高分和其他用户数据。表中的每个项都由用户ID和用户所玩游戏的名称唯一标识。GameScores表有一个主键，由分区键(UserId)和排序键(GameTitle)组成。用户只能访问与其用户ID相关的游戏数据。想要玩游戏的用户必须属于名为GameRole的IAM角色，该角色有一个附加的安全策略。要在这个应用程序中管理用户权限，你可以写一个权限策略，如下所示:**
-  ```yaml
-  {
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "AllowAccessToOnlyItemsMatchingUserID",
-            "Effect": "Allow",
-            "Action": [
-                "dynamodb:GetItem",
-                "dynamodb:BatchGetItem",
-                "dynamodb:Query",
-                "dynamodb:PutItem",
-                "dynamodb:UpdateItem",
-                "dynamodb:DeleteItem",
-                "dynamodb:BatchWriteItem"
-            ],
-            "Resource": [
-                "arn:aws:dynamodb:us-west-2:123456789012:table/GameScores"
-            ],
-            "Condition": {
-                "ForAllValues:StringEquals": {
-                    "dynamodb:LeadingKeys": [
-                        "${www.amazon.com:user_id}"
-                    ],
-                    "dynamodb:Attributes": [
-                        "UserId",
-                        "GameTitle",
-                        "Wins",
-                        "Losses",
-                        "TopScore",
-                        "TopScoreDateTime"
-                    ]
-                },
-                "StringEqualsIfExists": {
-                    "dynamodb:Select": "SPECIFIC_ATTRIBUTES"
-                }
-            }
-        }
-    ]
-  }
-  ```
+    ```yaml
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+          {
+              "Sid": "AllowAccessToOnlyItemsMatchingUserID",
+              "Effect": "Allow",
+              "Action": [
+                  "dynamodb:GetItem",
+                  "dynamodb:BatchGetItem",
+                  "dynamodb:Query",
+                  "dynamodb:PutItem",
+                  "dynamodb:UpdateItem",
+                  "dynamodb:DeleteItem",
+                  "dynamodb:BatchWriteItem"
+              ],
+              "Resource": [
+                  "arn:aws:dynamodb:us-west-2:123456789012:table/GameScores"
+              ],
+              "Condition": {
+                  "ForAllValues:StringEquals": {
+                      "dynamodb:LeadingKeys": [
+                          "${www.amazon.com:user_id}"
+                      ],
+                      "dynamodb:Attributes": [
+                          "UserId",
+                          "GameTitle",
+                          "Wins",
+                          "Losses",
+                          "TopScore",
+                          "TopScoreDateTime"
+                      ]
+                  },
+                  "StringEqualsIfExists": {
+                      "dynamodb:Select": "SPECIFIC_ATTRIBUTES"
+                  }
+              }
+          }
+      ]
+    }
+    ```
   - **除了为GameScores表(Resource元素)上的特定DynamoDB动作(Action元素)授予权限外，Condition元素还使用以下特定于DynamoDB的条件键来限制权限，如下所示:**<br>
     - **dyanmodb:LeadingKeys** —这个条件键允许用户只访问分区键值与用户ID匹配的项目。这个ID ${www.amazon.com:user_id}是一个替换变量。有关替代变量的更多信息，请参见使用web身份联合。<br>
     - **dynamodb:Attributes** -这个条件键限制对指定属性的访问，这样只有权限策略中列出的操作才能返回这些属性的值。此外，StringEqualsIfExists子句确保应用程序必须始终提供一个特定属性的列表来进行操作，并且应用程序不能请求所有属性。评估IAM策略时，结果总是true(允许访问)或false(拒绝访问)。如果Condition元素的任何部分为假，则整个策略的计算结果为假，并拒绝访问。
@@ -851,58 +853,58 @@
     3. volumes
       > Creates volumes from folders in the Amazon EC2 container instance, or from your source bundle (deployed to /var/app/current).<br>
       > <font color=red>Mount these volumes to paths within your Docker containers using **mountPoints**</font>
-  ```json
-  {
-    "AWSEBDockerrunVersion": 2,
-    "volumes": [
-      {
-        "name": "php-app",
-        "host": {
-          "sourcePath": "/var/app/current/php-app"
-        }
-      },
-      {
-        "name": "nginx-proxy-conf",
-        "host": {
-          "sourcePath": "/var/app/current/proxy/conf.d"
-        }
-      }
-    ],
-    "containerDefinitions": [
-      {
-        "name": "nginx-proxy",
-        "image": "nginx",
-        "essential": true,
-        "memory": 128,
-        "portMappings": [
-          {
-            "hostPort": 80,
-            "containerPort": 80
+    ```json
+    {
+      "AWSEBDockerrunVersion": 2,
+      "volumes": [
+        {
+          "name": "php-app",
+          "host": {
+            "sourcePath": "/var/app/current/php-app"
           }
-        ],
-        "links": [
-          "php-app"
-        ],
-        "mountPoints": [
-          {
-            "sourceVolume": "php-app",
-            "containerPath": "/var/www/html",
-            "readOnly": true
-          },
-          {
-            "sourceVolume": "nginx-proxy-conf",
-            "containerPath": "/etc/nginx/conf.d",
-            "readOnly": true
-          },
-          {
-            "sourceVolume": "awseb-logs-nginx-proxy",
-            "containerPath": "/var/log/nginx"
+        },
+        {
+          "name": "nginx-proxy-conf",
+          "host": {
+            "sourcePath": "/var/app/current/proxy/conf.d"
           }
-        ]
-      }
-    ]
-  }
-  ```
+        }
+      ],
+      "containerDefinitions": [
+        {
+          "name": "nginx-proxy",
+          "image": "nginx",
+          "essential": true,
+          "memory": 128,
+          "portMappings": [
+            {
+              "hostPort": 80,
+              "containerPort": 80
+            }
+          ],
+          "links": [
+            "php-app"
+          ],
+          "mountPoints": [
+            {
+              "sourceVolume": "php-app",
+              "containerPath": "/var/www/html",
+              "readOnly": true
+            },
+            {
+              "sourceVolume": "nginx-proxy-conf",
+              "containerPath": "/etc/nginx/conf.d",
+              "readOnly": true
+            },
+            {
+              "sourceVolume": "awseb-logs-nginx-proxy",
+              "containerPath": "/var/log/nginx"
+            }
+          ]
+        }
+      ]
+    }
+    ```
 
 ## Elastic Load Balancer
 - `Sticky Sessions`
@@ -999,10 +1001,10 @@
 ## AWS Cognito
 - `User Pools` & `Identity Pools`
 
-|Name|Description|
-|-|-|
-|`User Pools`|用户群体用于身份验证（身份核实）。如果使用用户群体，应用程序用户将可以通过该用户群体进行登录或通过第三方身份提供者（IdP）进行联合身份验证。|
-|`Identity Pools`|身份池用于授权（访问控制）。您可以使用身份池为用户创建唯一身份并向他们授予访问其他 AWS 服务的权限。|
+  |Name|Description|
+  |-|-|
+  |`User Pools`|用户群体用于身份验证（身份核实）。如果使用用户群体，应用程序用户将可以通过该用户群体进行登录或通过第三方身份提供者（IdP）进行联合身份验证。|
+  |`Identity Pools`|身份池用于授权（访问控制）。您可以使用身份池为用户创建唯一身份并向他们授予访问其他 AWS 服务的权限。|
 
 - `Cognito` 所支持的`Identity Providers`
   - Public providers: Amazon, Facebook, Google, Apple 
@@ -1040,19 +1042,19 @@
   - `OutputPath` -> 用于选择传往下个状态JSON特定项目(从Input中选择)
   - `ResultPath` -> 用于选择最终输出JSON特定项目(从Input中选择)
     - 例如,原始Input JSON<br>
-    ```json
-    {
-      "comment": "An input comment.",
-        "data": {
-        "val1": 23,
-        "val2": 17
-      },
-      "extra": "foo",
-      "lambda": {
-        "who": "AWS Step Functions"
+      ```json
+      {
+        "comment": "An input comment.",
+          "data": {
+          "val1": 23,
+          "val2": 17
+        },
+        "extra": "foo",
+        "lambda": {
+          "who": "AWS Step Functions"
+        }
       }
-    }
-    ```
+      ```
     - Step Function定义<br>
       ```json
       {
