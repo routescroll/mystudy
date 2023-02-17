@@ -558,7 +558,7 @@
       "TotalSegments": number #---------------Parallel Scan Segment Total Number
     }
     ```
-- `Scan操作对于RCU的冲击`
+- `Scan操作对于RCU的冲击`<br>
   <img name=scan src=https://routescroll.github.io/GetImage.jpeg width=50% /><br>
   - 降低Scan操作对RCU冲击的方法
     - Reduce Page Size(Query操作也适用)
@@ -645,46 +645,46 @@
     - **dynamodb:Attributes** -这个条件键限制对指定属性的访问，这样只有权限策略中列出的操作才能返回这些属性的值。此外，StringEqualsIfExists子句确保应用程序必须始终提供一个特定属性的列表来进行操作，并且应用程序不能请求所有属性。评估IAM策略时，结果总是true(允许访问)或false(拒绝访问)。如果Condition元素的任何部分为假，则整个策略的计算结果为假，并拒绝访问。
 
   - **下面的权限策略允许对表和表索引(在Resource元素中指定)执行特定的DynamoDB操作(在Action元素中指定)。该策略使用dynamodb:LeadingKeys条件键将权限限制到分区键值与用户的Facebook ID匹配的项目**
-  ```yaml
-  {
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "LimitAccessToCertainAttributesAndKeyValues",
-            "Effect": "Allow",
-            "Action": [
-                "dynamodb:UpdateItem",
-                "dynamodb:GetItem",
-                "dynamodb:Query",
-                "dynamodb:BatchGetItem"
-            ],
-            "Resource": [
-                "arn:aws:dynamodb:us-west-2:123456789012:table/GameScores",
-                "arn:aws:dynamodb:us-west-2:123456789012:table/GameScores/index/TopScoreDateTimeIndex"
-            ],
-            "Condition": {
-                "ForAllValues:StringEquals": {
-                    "dynamodb:LeadingKeys": [
-                        "${graph.facebook.com:id}"
-                    ],
-                    "dynamodb:Attributes": [
-                        "attribute-A",
-                        "attribute-B"
-                    ]
-                },
-                "StringEqualsIfExists": {
-                    "dynamodb:Select": "SPECIFIC_ATTRIBUTES",
-                    "dynamodb:ReturnValues": [
-                        "NONE",
-                        "UPDATED_OLD",
-                        "UPDATED_NEW"
-                    ]
-                }
-            }
-        }
-    ]
-  }
-  ```
+    ```yaml
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+          {
+              "Sid": "LimitAccessToCertainAttributesAndKeyValues",
+              "Effect": "Allow",
+              "Action": [
+                  "dynamodb:UpdateItem",
+                  "dynamodb:GetItem",
+                  "dynamodb:Query",
+                  "dynamodb:BatchGetItem"
+              ],
+              "Resource": [
+                  "arn:aws:dynamodb:us-west-2:123456789012:table/GameScores",
+                  "arn:aws:dynamodb:us-west-2:123456789012:table/GameScores/index/TopScoreDateTimeIndex"
+              ],
+              "Condition": {
+                  "ForAllValues:StringEquals": {
+                      "dynamodb:LeadingKeys": [
+                          "${graph.facebook.com:id}"
+                      ],
+                      "dynamodb:Attributes": [
+                          "attribute-A",
+                          "attribute-B"
+                      ]
+                  },
+                  "StringEqualsIfExists": {
+                      "dynamodb:Select": "SPECIFIC_ATTRIBUTES",
+                      "dynamodb:ReturnValues": [
+                          "NONE",
+                          "UPDATED_OLD",
+                          "UPDATED_NEW"
+                      ]
+                  }
+              }
+          }
+      ]
+    }
+    ```
   > **<font size=5 color=red>Important</font>**
   > 如果使用dynamodb:Attributes，则必须指定表的所有主键和索引键属性的名称(在**Resource**中指定)，以及策略中列出的任何辅助索引的名称。否则，DynamoDB不能使用这些关键属性来执行请求的操作。
 - **GSI 与 RCU/WCU**
@@ -731,7 +731,7 @@
 - CloudFormation template
   - 代码文件除了打包上传S3, 还可以在template.yaml中直接写代码(比如用Nodejs或者Python时)
     <img name=lambda-template-sourcecode src=https://routescroll.github.io/lambda-template-sourcecode.jpeg width=50%>
-  - 使用S3保存代码时的写法
+  - 使用S3保存代码时的写法<br>
     <img name=lambda-template-s3 src=https://routescroll.github.io/lambda-template-s3.jpeg width=50%>
 - Environment Variable的 `Transit Encryption`
   - 为Lambda添加 Environment Variable 时可以选择是否用 `Encrypt Helper` 对Environment Variable的Value进行加密, 并使用KMS作为加密/解密Key
@@ -1347,7 +1347,7 @@
   - 借用CloudFront加快用户上传文件到S3的速度
 - **S3 Policy Variable**
   - **${xxxxx}** 就是这个所谓的Variable, 可以被花括号内的内容动态替换<br>
-  <img name=s3-policy-variable src=https://routescroll.github.io/s3-policy-variable.jpeg width=50%>
+    <img name=s3-policy-variable src=https://routescroll.github.io/s3-policy-variable.jpeg width=50%>
 
 
 ## Elastic Cache
