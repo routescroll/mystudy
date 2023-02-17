@@ -470,7 +470,7 @@
     Segment — 要由特定工作进程扫描的段。每个工作进程应使用不同的 Segment 值。
     TotalSegments — 并行扫描的片段总数。该值必须与应用程序将使用的工作进程数量相同。
     <img name=parallelscan src=https://routescroll.github.io/ParallelScan.png width=50% />
-  - nodejs使用例
+  - nodejs使用例<br>
     ```JavaScript
     Scan(TotalSegments=4, Segment=0, ...)
     Scan(TotalSegments=4, Segment=1, ...)
