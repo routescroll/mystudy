@@ -166,9 +166,9 @@
           - command
           - command
 
-      finally:
-        - command
-        - command
+        finally:
+          - command
+          - command
 
     reports:
       report-group-name-or-arn:
