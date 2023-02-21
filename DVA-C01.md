@@ -702,8 +702,7 @@
   - Index的WCU分配不足时会使PrimaryTable出现限流错误(Throttling Error)
   - 起码要为IndexTable分配和PrimaryTable一样多的WCU/RCU
 - **Stream Invoke Lambda 属于同期Invoke**
-- ****
-  - [GSI中允许Primary Key(索引值)重复](https://blog.csdn.net/vikings_1001/article/details/48675945)
+- [GSI中允许Primary Key(索引值)重复](https://blog.csdn.net/vikings_1001/article/details/48675945)
 
 ## Lambda
 - Lambda部署
