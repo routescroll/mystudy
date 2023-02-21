@@ -692,6 +692,7 @@
   - PrimaryTable向IndexTable同步数据时会消耗Index的WCU
   - Index的WCU分配不足时会使PrimaryTable出现限流错误(Throttling Error)
   - 起码要为IndexTable分配和PrimaryTable一样多的WCU/RCU
+- **Stream Invoke Lambda** 属于同期Invoke
 
 ## Lambda
 - Lambda部署
@@ -941,6 +942,7 @@
 - 对于On-Premise来说无法使用`IAM Role`,所以好的解决办法就是使用`Access Keys`,将`Access Keys`保存到本机某路径
   - `Linux/MacOS: ~/.aws/credentials `
   - `Windows: %UserProfle%\.aws\credentials`
+- **Key Pair** 是 Public/Private Key Pair, 用于SSH登录
 - `Cross-Account Access`<br>
   - 不能把其他账号下的IAM user加入到本账号的IAM Group中<br>
 ![iam-cross-account-access](https://routescroll.github.io/iam-cross-account-access.png)
@@ -1363,6 +1365,8 @@
     
     <font color=red>Memcached Multi Nodes</font> - 所有数据分布在各个Node中, 一个Node挂掉所有数据完整性会被破坏
     ![redis-node-replica](https://routescroll.github.io/memcached.jpeg)
+- **Memcached 和 Redis 的对比**<br>
+  <img name=elastic-cache-compare src=https://routescroll.github.io/elastic-cache-compare.png width=50%>
 
 ## CloudFormation
 - `CloudFormation Depolyment`有时会出现删除某Reource失败, 原因可能是某Resource与其他非当前Stack创建的Resource有关联, 当前Stack无法删除非自己创建的Resource, 也无法删除与之关联的自己创建的Resource
@@ -1481,10 +1485,6 @@
 
 ## CloudTrail
 - 貌似通过Console创建的CloudTrail无需每个Region都设置一次CloudTrail. 默认都是应用于 `All Region`, 记录下来的log会同一存储在同一个S3 Bucket里
-
-## ElasticCache
-- **Memcached 和 Redis 的对比**<br>
-  <img name=elastic-cache-compare src=https://routescroll.github.io/elastic-cache-compare.png width=50%>
 
 ## SQS
 - 关于Message `VisibilityTimeout` 可见期间
