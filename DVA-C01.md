@@ -692,7 +692,7 @@
   - PrimaryTable向IndexTable同步数据时会消耗Index的WCU
   - Index的WCU分配不足时会使PrimaryTable出现限流错误(Throttling Error)
   - 起码要为IndexTable分配和PrimaryTable一样多的WCU/RCU
-- **Stream Invoke Lambda** 属于同期Invoke
+- **Stream Invoke Lambda 属于同期Invoke**
 
 ## Lambda
 - Lambda部署
