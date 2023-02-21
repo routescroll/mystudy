@@ -19,6 +19,15 @@
   |◎|◎|◎|Lambda|-|◎|
   |◎|◎|◎|ECS|-|◎|
 
+- **Immutable VS Blue/Green**
+  - Immutable
+    - Launches new instances in a new ASG and deploys the version update to these instances before swapping traffic to these instances once healthy.
+    - Zero downtime.
+
+  - Blue / Green deployment:
+    - Zero downtime and release facility.
+    - Create a new “stage” environment and deploy updates there.
+
 - `AppSpec File`
   - `files section (EC2/On-Premises only)`
     ```yaml
