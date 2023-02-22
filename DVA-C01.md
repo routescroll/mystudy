@@ -1043,10 +1043,14 @@
   3. Cognito会为你的app自动提供一个Web UI供用户注册登录. 用户可以向该页面添加自己的CSS或者logo
 - `Cognito Sync`
   - 用户Deviece中使用 `Client Library` 可以Device内部建立 **Local Cache of Identity Data**
-  - `Client Library` 与云端Cognito Service进行数据同步, 从而使用户在多个设备上都能保持同样的Identity Data同步
+  - `Client Library` 使用唯一Identity绑定最多 **1MB x 20个** Data Set, 可以使用户在多种设备之间同步Data Set数据ß
+  
 
 - 关于 `Unauthenticated identities(users)`
   - Cognito **identity pools** 支持允许用户在不登录的情况下获取有限的访问权限, 设置简单, 只需增加一个有限权限的Role并分配给 `Unauthenticated users`
+
+- SAML
+  - 需要配合Directory Source(比如Azure提供的)使用
 
 ## Step Function
 - `Fields Filter` , 用于从InputJSON中选择特定项目使用
