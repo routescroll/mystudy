@@ -244,6 +244,7 @@
   |~|attributes:ecs.os-type|
   |~|attributes:ecs.aim-id|
   |random|~|
+  **注意Spread是需要指定在哪个范围内进行Spread, 所以在配置流程上比其他两个稍微繁琐一点**
 
 - Placement Contraint
   1. **distinctInstance**
@@ -788,6 +789,8 @@
 - `namespace`
   - 不同 `namespace` 中的Metrics是彼此独立的
   - 故, 给各个application定义自己的 `namespace`, 把各个application各自的Metrics发送到各自的 `namespace` 中, 就不会把很多application的Metrics混在一起显示了
+- **CloudWatch Event** 可以用来监视AWS Service, 但是无法用来监视Service中的application
+  - 比如, 可以监视EC2本身, 但是无法监视EC2里的application
 
 ## AppSync - GraphQL
 - GraphQL与AppSync组合向用户提供 **Single API - Multi Data Source** 服务<br>
